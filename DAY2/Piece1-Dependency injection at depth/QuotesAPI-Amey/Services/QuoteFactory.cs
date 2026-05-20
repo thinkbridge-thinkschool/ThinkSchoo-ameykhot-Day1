@@ -15,12 +15,6 @@ public sealed class QuoteFactory : IQuoteFactory
     public Quote Create(string author, string text, DateTime? createdAtUtc = null)
     {
         var timestamp = createdAtUtc ?? _clock.UtcNow.UtcDateTime;
-
-        return new Quote
-        {
-            Author = author,
-            Text = text,
-            CreatedAt = timestamp
-        };
+        return new Quote(author, text, timestamp);
     }
 }
