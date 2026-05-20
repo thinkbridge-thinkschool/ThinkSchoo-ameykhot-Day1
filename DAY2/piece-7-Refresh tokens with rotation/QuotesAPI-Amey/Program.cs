@@ -1,0 +1,50 @@
+using QuotesApi.Data;
+using QuotesApi.Extensions;
+using QuotesApi.Middleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services
+builder.Services.AddInfrastructure(builder.Configuration);
+
+var jwtKey = builder.Configuration["Jwt:Key"]
+	?? throw new InvalidOperationException("Jwt:Key not found in configuration");
+
+if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
+	throw new InvalidOperationException("Jwt:Key must be at least 256 bits (32 UTF-8 bytes)");
+
+builder.Services
+	.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+	.AddJwtBearer(options =>
+	{
+		options.TokenValidationParameters = new TokenValidationParameters
+		{
+			ValidateIssuerSigningKey = true,
+			IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+			ValidateIssuer = false,
+			ValidateAudience = false,
+			ValidateLifetime = true,
+			ClockSkew = TimeSpan.Zero
+		};
+	});
+
+builder.Services.AddAuthorization();
+
+var app = builder.Build();
+
+// Middleware
+app.UseExceptionMiddleware();
+app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Apply migrations
+app.ApplyMigrations();
+
+// Map endpoints
+app.MapQuoteEndpoints();
+
+app.Run();
