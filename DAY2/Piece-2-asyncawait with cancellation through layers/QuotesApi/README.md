@@ -2,6 +2,18 @@
 
 A modern ASP.NET Core 10 API for managing quotes and collections, built with **Domain-Driven Design (DDD)** principles, **Entity Framework Core**, and **FluentValidation**.
 
+## Cancellation Flow (Day 2 Piece 2)
+
+- Every I/O async method accepts `CancellationToken` as the last parameter.
+- Token flow for collection endpoints is endpoint handler -> service -> repository -> EF Core.
+- Request aborts are translated to HTTP `499` in middleware when `RequestAborted` is canceled.
+
+### Run the cancellation test
+
+```bash
+dotnet test ../QuotesApi.Tests/QuotesApi.Tests.csproj
+```
+
 ## 🚀 What You Can Do
 
 ### 1. **Manage Quotes**
