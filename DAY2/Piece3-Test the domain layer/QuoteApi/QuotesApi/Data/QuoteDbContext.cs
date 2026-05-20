@@ -17,8 +17,9 @@ public class QuoteDbContext : DbContext
         modelBuilder.Entity<Quote>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Author).IsRequired().HasMaxLength(256);
-            entity.Property(e => e.Text).IsRequired().HasMaxLength(2000);
+            entity.Property(e => e.Author).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Text).IsRequired().HasMaxLength(1000);
+            entity.Property(e => e.IsDeleted).IsRequired();
         });
 
         modelBuilder.Entity<Collection>(entity =>
