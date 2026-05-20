@@ -1,0 +1,19 @@
+# .NET build outputs
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Node
+node_modules/
+dist/
+
+# Rider/VS
+.idea/
+*.DotSettings.user
+
+# Misc
+*.log
+.DS_Store
+Thumbs.db

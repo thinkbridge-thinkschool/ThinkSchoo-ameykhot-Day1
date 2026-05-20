@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+.env
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# macOS
+.DS_Store
