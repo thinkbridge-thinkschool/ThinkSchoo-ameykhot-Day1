@@ -553,3 +553,17 @@ DELETE /api/collections/1
 For issues or questions, contact the development team.
 
 **Happy quoting! 🎉**
+
+## Day 2 Piece 4 - Rich Quote Entity Refactor
+
+### What changed
+- Refactored Quote from an anemic data holder to a rich entity with encapsulated state.
+- Added static factory Quote.Create(author, text) that returns either a created quote or a domain error.
+- Enforced quote invariants in the domain:
+  - Author length: 1-200
+  - Text length: 1-1000
+- Made quote text immutable after creation by using private set and exposing no text update behavior.
+- Replaced hard delete with soft delete (IsDeleted) and updated repository queries to exclude soft-deleted quotes.
+- Updated create-quote endpoint flow to use the domain factory and return domain validation errors.
+- Added EF Core migration for IsDeleted and updated model constraints.
+- Added domain tests for Quote invariants and soft-delete behavior.
