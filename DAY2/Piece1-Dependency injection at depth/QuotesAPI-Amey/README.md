@@ -228,6 +228,23 @@ dotnet run
 
 ---
 
+## Dependency Injection Lifetimes Exercise
+
+This project includes a DI-focused exercise with explicit lifetimes and abstractions:
+
+- `IClock` is registered as `Singleton` via `SystemClock`
+- `IQuoteFactory` is registered as `Scoped` and consumes `IClock`
+- Quote creation endpoints resolve `IQuoteFactory` and `IClock` through DI
+- Quote timestamps are passed as parameters to domain constructors
+
+Run tests to validate the behavior:
+
+```bash
+dotnet test
+```
+
+---
+
 ## 🧪 Testing with PowerShell
 
 ### Create a Collection
