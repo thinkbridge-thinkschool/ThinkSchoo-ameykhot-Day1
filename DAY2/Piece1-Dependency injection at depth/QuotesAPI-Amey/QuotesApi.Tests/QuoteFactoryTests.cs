@@ -18,6 +18,19 @@ public class QuoteFactoryTests
         Assert.Equal(fixedUtcNow.UtcDateTime, quote.CreatedAt);
     }
 
+    [Fact]
+    public void Create_WithExplicitTimestamp_UsesProvidedTimestamp()
+    {
+        var clockNow = new DateTimeOffset(2026, 5, 19, 12, 30, 0, TimeSpan.Zero);
+        var explicitTimestamp = new DateTime(2024, 1, 2, 3, 4, 5, DateTimeKind.Utc);
+        IClock clock = new FakeClock(clockNow);
+        var factory = new QuoteFactory(clock);
+
+        var quote = factory.Create("Explicit Author", "Explicit Quote", explicitTimestamp);
+
+        Assert.Equal(explicitTimestamp, quote.CreatedAt);
+    }
+
     private sealed class FakeClock : IClock
     {
         public FakeClock(DateTimeOffset utcNow)
