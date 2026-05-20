@@ -15,10 +15,10 @@ public class CreateQuoteRequestValidator : AbstractValidator<CreateQuoteRequest>
     {
         RuleFor(x => x.Author)
             .NotEmpty().WithMessage("Author is required")
-            .MaximumLength(256).WithMessage("Author must be at most 256 characters");
+            .MaximumLength(200).WithMessage("Author must be at most 200 characters");
 
         RuleFor(x => x.Text)
             .NotEmpty().WithMessage("Text is required")
-            .MaximumLength(2000).WithMessage("Text must be at most 2000 characters");
+            .MaximumLength(1000).WithMessage("Text must be at most 1000 characters");
     }
 }

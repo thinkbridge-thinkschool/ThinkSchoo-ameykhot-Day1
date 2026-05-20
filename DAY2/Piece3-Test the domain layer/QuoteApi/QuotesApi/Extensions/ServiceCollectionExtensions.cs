@@ -111,7 +111,15 @@ public static class EndpointExtensions
                     .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray())
             });
 
-        var quote = new Quote { Author = request.Author, Text = request.Text };
+        var (quote, error) = Quote.Create(request.Author, request.Text);
+        if (quote is null)
+            return Results.UnprocessableEntity(new ProblemDetails
+            {
+                Title = "Domain validation failed",
+                Status = 422,
+                Detail = error
+            });
+
         var created = await repository.CreateQuoteAsync(quote, cancellationToken);
         return Results.Created($"/api/quotes/{created.Id}", created);
     }
