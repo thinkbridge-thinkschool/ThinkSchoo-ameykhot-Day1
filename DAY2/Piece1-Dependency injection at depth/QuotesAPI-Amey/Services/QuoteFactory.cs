@@ -12,13 +12,9 @@ public sealed class QuoteFactory : IQuoteFactory
         _clock = clock;
     }
 
-    public Quote Create(string author, string text)
+    public Quote Create(string author, string text, DateTime? createdAtUtc = null)
     {
-        return new Quote
-        {
-            Author = author,
-            Text = text,
-            CreatedAt = _clock.UtcNow.UtcDateTime
-        };
+        var timestamp = createdAtUtc ?? _clock.UtcNow.UtcDateTime;
+        return new Quote(author, text, timestamp);
     }
 }

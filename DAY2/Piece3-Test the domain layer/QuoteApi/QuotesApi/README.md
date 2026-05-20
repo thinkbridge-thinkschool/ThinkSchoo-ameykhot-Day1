@@ -2,6 +2,47 @@
 
 A modern ASP.NET Core 10 API for managing quotes and collections, built with **Domain-Driven Design (DDD)** principles, **Entity Framework Core**, and **FluentValidation**.
 
+## What Was Added In This Project
+
+- Added a dedicated `ICollectionService` / `CollectionService` layer between endpoints and repository.
+- Propagated `CancellationToken` through collection endpoint handlers -> service -> repository -> EF Core.
+- Added request-abort handling in middleware to return status `499` for canceled requests.
+- Added an integration test project (`QuotesApi.Tests`) for cancellation behavior.
+- Added a cancellation proof test that cancels a request during collection creation and asserts the operation does not complete.
+- Added a dedicated domain test project (`Tests.Domain`) using xUnit + FluentAssertions.
+- Added aggregate invariant tests for `Collection`: name rules, max item limit, duplicate prevention, remove-missing guard, and add-remove consistency.
+- Added a separate submission document: `SOLUTION_SUBMISSION.md`.
+
+## Domain Layer Tests (Day 2 Piece 3)
+
+- Target: aggregate invariants in `Collection` (pure domain behavior, no DbContext).
+- Project: `Tests.Domain`
+- Stack: `xUnit` + `FluentAssertions`
+
+### Run domain tests
+
+```bash
+dotnet test ../Tests.Domain/Tests.Domain.csproj --no-build -v minimal
+```
+
+### Latest result
+
+```text
+Test summary: total: 6, failed: 0, succeeded: 6, skipped: 0
+```
+
+## Cancellation Flow (Day 2 Piece 2)
+
+- Every I/O async method accepts `CancellationToken` as the last parameter.
+- Token flow for collection endpoints is endpoint handler -> service -> repository -> EF Core.
+- Request aborts are translated to HTTP `499` in middleware when `RequestAborted` is canceled.
+
+### Run the cancellation test
+
+```bash
+dotnet test ../QuotesApi.Tests/QuotesApi.Tests.csproj
+```
+
 ## 🚀 What You Can Do
 
 ### 1. **Manage Quotes**
@@ -224,23 +265,6 @@ dotnet build
 ### 3. Run the Application
 ```bash
 dotnet run
-```
-
----
-
-## Dependency Injection Lifetimes Exercise
-
-This project includes a DI-focused exercise with explicit lifetimes and abstractions:
-
-- `IClock` is registered as `Singleton` via `SystemClock`
-- `IQuoteFactory` is registered as `Scoped` and consumes `IClock`
-- Quote creation endpoints resolve `IQuoteFactory` and `IClock` through DI
-- Quote timestamps are passed as parameters to domain constructors
-
-Run tests to validate the behavior:
-
-```bash
-dotnet test
 ```
 
 ---
@@ -521,106 +545,6 @@ DELETE /api/collections/1/items/1
 DELETE /api/collections/1
 # Returns: 204 No Content
 ```
-
----
-
----
-
-## 💉 Dependency Injection Deep Dive — What This Exercise Adds
-
-This project was extended as part of a **DI Lifetimes & Abstractions** exercise. Here is what was learned and what was added.
-
-### The Three Lifetimes in Action
-
-| Lifetime | Registration | Service | Why |
-|---|---|---|---|
-| **Singleton** | `AddSingleton<IClock, SystemClock>()` | `IClock` | Stateless, safe to share across all requests. The real clock never changes behaviour. |
-| **Transient** | `AddTransient<IQuoteFactory, QuoteFactory>()` | `IQuoteFactory` | Stateless factory; a new instance per resolution is cheap and avoids any risk of shared mutable state. |
-| **Scoped** | `AddScoped<IQuoteRepository, ...>()` | `IQuoteRepository`, `ICollectionRepository`, `QuoteDbContext` | One instance per HTTP request — the correct lifetime for EF Core's `DbContext`, which is not thread-safe and tracks change state per request. |
-
-### Why Wrong Lifetimes Are Dangerous
-
-The classic mistake is registering a **singleton** that holds a **scoped** dependency (e.g., `DbContext`).  
-.NET's DI container will throw a `InvalidOperationException` ("cannot consume scoped service from singleton") in development mode, but the logic error is: the singleton keeps the `DbContext` alive across requests, silently sharing tracked entity state — leading to corrupt or stale data responses.
-
-**Rule of thumb:** a service's lifetime must be ≥ every lifetime it depends on.  
-Singleton → can only depend on singletons.  
-Scoped → can depend on scoped or transient.  
-Transient → can depend on anything.
-
-### IClock Abstraction — Why It Matters
-
-Before this exercise, `DateTime.UtcNow` was called directly inside models:
-
-```csharp
-// ❌ Before — untestable, time is fixed at object creation
-public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-```
-
-After this exercise, the `IClock` interface is injected wherever a timestamp is needed:
-
-```csharp
-// ✅ After — constructor injection, time comes from the container
-public interface IClock
-{
-    DateTimeOffset UtcNow { get; }
-}
-
-public sealed class SystemClock : IClock
-{
-    public DateTimeOffset UtcNow => DateTimeOffset.UtcNow;  // real clock
-}
-```
-
-**Benefits:**
-- **Testability** — tests inject a `FakeClock` with a fixed instant; no flaky time-dependent assertions.
-- **Determinism** — the timestamp is computed at the moment the factory or handler runs, not at object construction.
-- **Single source of truth** — every service that needs the current time asks the container for `IClock`; the implementation is swapped in one place.
-
-### Constructor Injection — No `new` Inside Methods
-
-All services declare their dependencies in the constructor. The container wires everything:
-
-```csharp
-// QuoteFactory — declares IClock in constructor, container provides it
-public sealed class QuoteFactory : IQuoteFactory
-{
-    private readonly IClock _clock;
-    public QuoteFactory(IClock clock) => _clock = clock;
-
-    public Quote Create(string author, string text) =>
-        new Quote { Author = author, Text = text, CreatedAt = _clock.UtcNow.UtcDateTime };
-}
-```
-
-This means `QuoteFactory` is fully testable with zero infrastructure:
-
-```csharp
-[Fact]
-public void Create_UsesClockUtcNow_ForCreatedAt()
-{
-    var fixedTime = new DateTimeOffset(2026, 5, 19, 12, 30, 0, TimeSpan.Zero);
-    var factory = new QuoteFactory(new FakeClock(fixedTime));
-
-    var quote = factory.Create("Author", "Text");
-
-    Assert.Equal(fixedTime.UtcDateTime, quote.CreatedAt);  // always passes
-}
-```
-
-### Files Added / Changed
-
-| File | What Changed |
-|---|---|
-| `Time/IClock.cs` | New — `IClock` abstraction |
-| `Time/SystemClock.cs` | New — real-clock singleton implementation |
-| `Services/IQuoteFactory.cs` | New — factory interface |
-| `Services/QuoteFactory.cs` | New — factory injects `IClock`, creates `Quote` with correct timestamp |
-| `Models/Quote.cs` | `CreatedAt` default removed; set by factory via clock |
-| `Models/Collection.cs` | `AddItem` receives `DateTime addedAtUtc` param instead of calling `DateTime.UtcNow` internally |
-| `Extensions/ServiceCollectionExtensions.cs` | Registered `IClock` (singleton), `IQuoteFactory` (transient) |
-| `QuotesApi.Tests/QuoteFactoryTests.cs` | New — unit test using `FakeClock` proving deterministic timestamp |
-| `QuotesApi.csproj` | Excluded test folder from main project glob |
 
 ---
 

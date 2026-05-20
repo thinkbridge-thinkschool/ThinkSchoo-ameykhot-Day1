@@ -5,7 +5,6 @@ using QuotesApi.Data;
 using QuotesApi.Middleware;
 using QuotesApi.Models;
 using QuotesApi.Services;
-using QuotesApi.Time;
 using QuotesApi.Validators;
 
 namespace QuotesApi.Extensions;
@@ -20,10 +19,9 @@ public static class ServiceCollectionExtensions
         services.AddDbContext<QuoteDbContext>(options =>
             options.UseSqlite(connectionString));
 
-        services.AddSingleton<IClock, SystemClock>();
-        services.AddScoped<IQuoteFactory, QuoteFactory>();
         services.AddScoped<IQuoteRepository, QuoteRepository>();
         services.AddScoped<ICollectionRepository, CollectionRepository>(); // NEW
+        services.AddScoped<ICollectionService, CollectionService>();
         services.AddValidatorsFromAssemblyContaining<CreateQuoteRequestValidator>();
 
         return services;
@@ -98,8 +96,6 @@ public static class EndpointExtensions
     private static async Task<IResult> CreateQuote(
         CreateQuoteRequest request,
         IQuoteRepository repository,
-        IQuoteFactory quoteFactory,
-        IClock clock,
         ILogger<Program> logger,
         IValidator<CreateQuoteRequest> validator,
         CancellationToken cancellationToken = default)
@@ -115,7 +111,7 @@ public static class EndpointExtensions
                     .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray())
             });
 
-        var quote = quoteFactory.Create(request.Author, request.Text, clock.UtcNow.UtcDateTime);
+        var quote = new Quote { Author = request.Author, Text = request.Text };
         var created = await repository.CreateQuoteAsync(quote, cancellationToken);
         return Results.Created($"/api/quotes/{created.Id}", created);
     }
@@ -143,20 +139,18 @@ public static class EndpointExtensions
 
     private static async Task<IResult> CreateCollection(
         CreateCollectionRequest request,
-        ICollectionRepository repo,
+        ICollectionService service,
         CancellationToken cancellationToken = default)
     {
-        // DomainException thrown here if name invalid → caught by ExceptionMiddleware → 400
-        var collection = new Collection(request.Name, request.OwnerId);
-        await repo.AddAsync(collection, cancellationToken);
+        var collection = await service.CreateCollectionAsync(request.Name, request.OwnerId, cancellationToken);
         return Results.Created($"/api/collections/{collection.Id}", collection);
     }
 
     private static async Task<IResult> GetCollectionById(
-        int id, ICollectionRepository repo,
+        int id, ICollectionService service,
         CancellationToken cancellationToken = default)
     {
-        var collection = await repo.GetByIdAsync(id, cancellationToken);
+        var collection = await service.GetCollectionByIdAsync(id, cancellationToken);
         return collection is null
             ? Results.NotFound(new ProblemDetails { Title = "Not Found", Status = 404, Detail = $"Collection {id} not found" })
             : Results.Ok(collection);
@@ -165,40 +159,33 @@ public static class EndpointExtensions
     private static async Task<IResult> AddItemToCollection(
         int id,
         AddCollectionItemRequest request,
-        IClock clock,
-        ICollectionRepository repo,
+        ICollectionService service,
         CancellationToken cancellationToken = default)
     {
-        var collection = await repo.GetByIdAsync(id, cancellationToken);
+        var collection = await service.AddItemToCollectionAsync(id, request.QuoteId, cancellationToken);
         if (collection is null)
             return Results.NotFound(new ProblemDetails { Title = "Not Found", Status = 404, Detail = $"Collection {id} not found" });
 
-        // ALL invariants enforced HERE inside the aggregate — not in this handler
-        collection.AddItem(request.QuoteId, clock.UtcNow.UtcDateTime);
-
-        await repo.UpdateAsync(collection, cancellationToken);
         return Results.Ok(collection);
     }
 
     private static async Task<IResult> RemoveItemFromCollection(
         int id, int quoteId,
-        ICollectionRepository repo,
+        ICollectionService service,
         CancellationToken cancellationToken = default)
     {
-        var collection = await repo.GetByIdAsync(id, cancellationToken);
+        var collection = await service.RemoveItemFromCollectionAsync(id, quoteId, cancellationToken);
         if (collection is null)
             return Results.NotFound(new ProblemDetails { Title = "Not Found", Status = 404, Detail = $"Collection {id} not found" });
 
-        collection.RemoveItem(quoteId);
-        await repo.UpdateAsync(collection, cancellationToken);
         return Results.Ok(collection);
     }
 
     private static async Task<IResult> DeleteCollection(
-        int id, ICollectionRepository repo,
+        int id, ICollectionService service,
         CancellationToken cancellationToken = default)
     {
-        await repo.DeleteAsync(id, cancellationToken);
+        await service.DeleteCollectionAsync(id, cancellationToken);
         return Results.NoContent();
     }
 }
