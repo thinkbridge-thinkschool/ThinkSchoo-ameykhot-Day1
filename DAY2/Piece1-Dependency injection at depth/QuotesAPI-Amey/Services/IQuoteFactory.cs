@@ -4,5 +4,5 @@ namespace QuotesApi.Services;
 
 public interface IQuoteFactory
 {
-    Quote Create(string author, string text);
+    Quote Create(string author, string text, DateTime? createdAtUtc = null);
 }
