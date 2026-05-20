@@ -21,6 +21,11 @@ public class ExceptionMiddleware
         {
             await _next(context);
         }
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+        {
+            context.Response.Clear();
+            context.Response.StatusCode = 499;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unhandled exception occurred: {ExceptionMessage}", ex.Message);
