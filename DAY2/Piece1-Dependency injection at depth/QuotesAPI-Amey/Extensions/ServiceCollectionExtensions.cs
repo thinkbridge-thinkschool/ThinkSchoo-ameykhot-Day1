@@ -21,7 +21,7 @@ public static class ServiceCollectionExtensions
             options.UseSqlite(connectionString));
 
         services.AddSingleton<IClock, SystemClock>();
-        services.AddTransient<IQuoteFactory, QuoteFactory>();
+        services.AddScoped<IQuoteFactory, QuoteFactory>();
         services.AddScoped<IQuoteRepository, QuoteRepository>();
         services.AddScoped<ICollectionRepository, CollectionRepository>(); // NEW
         services.AddValidatorsFromAssemblyContaining<CreateQuoteRequestValidator>();
@@ -99,6 +99,7 @@ public static class EndpointExtensions
         CreateQuoteRequest request,
         IQuoteRepository repository,
         IQuoteFactory quoteFactory,
+        IClock clock,
         ILogger<Program> logger,
         IValidator<CreateQuoteRequest> validator,
         CancellationToken cancellationToken = default)
@@ -114,7 +115,7 @@ public static class EndpointExtensions
                     .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray())
             });
 
-        var quote = quoteFactory.Create(request.Author, request.Text);
+        var quote = quoteFactory.Create(request.Author, request.Text, clock.UtcNow.UtcDateTime);
         var created = await repository.CreateQuoteAsync(quote, cancellationToken);
         return Results.Created($"/api/quotes/{created.Id}", created);
     }

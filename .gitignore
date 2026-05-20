@@ -1,6 +1,7 @@
 # .NET build outputs
 bin/
 obj/
+TestResults/
 *.user
 *.suo
 .vs/
@@ -15,5 +16,8 @@ dist/
 
 # Misc
 *.log
+*.db
+*.db-shm
+*.db-wal
 .DS_Store
 Thumbs.db
