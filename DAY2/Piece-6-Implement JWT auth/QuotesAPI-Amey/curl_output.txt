@@ -1,0 +1,31 @@
+# JWT auth verification - 2026-05-20T16:52:55
+
+## Test 1 - No token on POST /api/quotes (expect 401)
+HTTP/1.1 401 Unauthorized
+Content-Length: 0
+Date: Wed, 20 May 2026 11:22:54 GMT
+Server: Kestrel
+WWW-Authenticate: Bearer
+
+
+## Test 2 - Valid token on POST /api/quotes (expect success)
+Login Response:
+{"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjY5NzNiOWU0LTEzNjMtNDFiMy1iOWY5LTljMTRmMWZmODdkMSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6InVzZXJAdGVzdC5jb20iLCJleHAiOjE3NzkyNzcwNzV9.AQ2zl9hfgaTz2tinJEAZwj11oyxNQYkHkcsDJkcbPiY","refresh_token":"43d87d6520564d859a9f575eba4121dd","expires_in":900}
+HTTP/1.1 201 Created
+Content-Type: application/json; charset=utf-8
+Date: Wed, 20 May 2026 11:22:55 GMT
+Server: Kestrel
+Location: /api/quotes/3
+Transfer-Encoding: chunked
+
+{"id":3,"author":"test","text":"hello secure","createdAt":"2026-05-20T11:22:55.9247504Z"}
+
+## Test 3 - Expired token on POST /api/quotes (expect 401 invalid_token)
+Expired Login Response:
+{"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjY5NzNiOWU0LTEzNjMtNDFiMy1iOWY5LTljMTRmMWZmODdkMSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6InVzZXJAdGVzdC5jb20iLCJleHAiOjE3NzkyNzYxNjZ9.XZtxxWRcTIXKd0Fe0q9lfk09lPgzcydKnYLgNc_NEYk","refresh_token":"1f0cf2d3ece84691886a027a5aece6e2","expires_in":-10}
+HTTP/1.1 401 Unauthorized
+Content-Length: 0
+Date: Wed, 20 May 2026 11:22:56 GMT
+Server: Kestrel
+WWW-Authenticate: Bearer error="invalid_token", error_description="The token expired at '05/20/2026 11:22:46'"
+
