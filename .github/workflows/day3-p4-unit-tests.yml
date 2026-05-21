@@ -1,0 +1,38 @@
+name: Day 3 – Piece 4 xUnit with Fluent Assertions
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "DAY3/Piece-4-xUnit with Fluent Assertions/**"
+      - ".github/workflows/day3-p4-unit-tests.yml"
+  pull_request:
+    paths:
+      - "DAY3/Piece-4-xUnit with Fluent Assertions/**"
+      - ".github/workflows/day3-p4-unit-tests.yml"
+
+jobs:
+  unit-tests:
+    name: Unit Tests (.NET 10)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        working-directory: "DAY3/Piece-4-xUnit with Fluent Assertions/QuotesAPI-Amey/Quotes.Tests.Unit"
+        run: dotnet restore
+
+      - name: Build
+        working-directory: "DAY3/Piece-4-xUnit with Fluent Assertions/QuotesAPI-Amey/Quotes.Tests.Unit"
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run unit tests
+        working-directory: "DAY3/Piece-4-xUnit with Fluent Assertions/QuotesAPI-Amey/Quotes.Tests.Unit"
+        run: dotnet test --no-build --configuration Release --logger "console;verbosity=detailed"
