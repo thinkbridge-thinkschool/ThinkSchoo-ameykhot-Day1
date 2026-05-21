@@ -11,7 +11,10 @@ public class IntegrationCollection : ICollectionFixture<SqlServerContainerFixtur
 
 public sealed class SqlServerContainerFixture : IAsyncLifetime
 {
-    private readonly MsSqlContainer _container = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest")
+    // Pinned CU tag avoids instability bugs in rolling "latest"; startup timeout
+    // is extended to 5 min so CI runners that pull the image cold don't time out.
+    private readonly MsSqlContainer _container = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04")
+        .WithStartupTimeout(TimeSpan.FromMinutes(5))
         .Build();
 
     public string ConnectionString { get; private set; } = string.Empty;

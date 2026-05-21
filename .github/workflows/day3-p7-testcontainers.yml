@@ -50,13 +50,14 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
-      # Fix Docker socket permissions — required on ubuntu-latest for
-      # non-root processes (like the dotnet test runner) to reach the daemon.
+      # Docker is pre-installed on ubuntu-latest; open the socket to non-root users.
       - name: Fix Docker socket permissions
         run: sudo chmod 666 /var/run/docker.sock
 
-      - name: Verify Docker is reachable
-        run: docker info
+      # Pre-pull caches the ~1.4 GB image so it is available before dotnet test
+      # starts; also surfaces any registry / network failures as a clear step error.
+      - name: Pre-pull SQL Server image
+        run: docker pull mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04
 
       - name: Restore
         working-directory: "DAY3/Piece-7-Real SQL Server in CI with Testcontainers/QuotesAPI-Amey/Quotes.Tests.Integration"
@@ -70,9 +71,8 @@ jobs:
         working-directory: "DAY3/Piece-7-Real SQL Server in CI with Testcontainers/QuotesAPI-Amey/Quotes.Tests.Integration"
         run: dotnet test --no-build --configuration Release --logger "console;verbosity=detailed"
         env:
-          # Disable Ryuk (the Testcontainers resource-reaper sidecar).
-          # On GitHub Actions, Ryuk can't route back to the runner host and
-          # kills containers before tests finish — disabling it is safe here
-          # because the runner VM is ephemeral and cleans up on its own.
+          # Disable the Ryuk resource-reaper sidecar. Ryuk tries to call back to
+          # the runner host on a random port; GitHub Actions network rules block
+          # that, killing the SQL Server container mid-run. Safe to disable because
+          # the ephemeral runner VM cleans up all containers on job completion.
           TESTCONTAINERS_RYUK_DISABLED: "true"
-          DOCKER_HOST: "unix:///var/run/docker.sock"
