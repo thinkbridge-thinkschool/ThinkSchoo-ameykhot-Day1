@@ -1,0 +1,16 @@
+## .NET build artifacts
+bin/
+obj/
+
+## SQLite database files
+*.db
+*.db-shm
+*.db-wal
+
+## User-specific VS files
+*.user
+.vs/
+
+## OS
+.DS_Store
+Thumbs.db
