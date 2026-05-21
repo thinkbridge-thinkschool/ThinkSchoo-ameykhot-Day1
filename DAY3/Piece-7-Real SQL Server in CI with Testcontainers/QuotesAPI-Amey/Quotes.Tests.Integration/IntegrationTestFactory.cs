@@ -5,11 +5,8 @@ using System.Text;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
-using QuotesApi.Data;
 
 namespace Quotes.Tests.Integration;
 
@@ -35,35 +32,21 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // ConfigureAppConfiguration runs before AddInfrastructure, so setting
+        // "DatabaseProvider" = "SqlServer" here causes AddInfrastructure to call
+        // UseSqlServer instead of UseSqlite — only ONE provider is ever registered.
         builder.ConfigureAppConfiguration((_, cfg) =>
         {
             cfg.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:DefaultConnection"] = _connectionString,
+                ["DatabaseProvider"]                   = "SqlServer",
                 ["Jwt:Key"]                            = TestJwtKey,
                 ["Jwt:AccessTokenLifetimeSeconds"]     = "900",
                 // Fake Entra values — OIDC discovery is lazy so tests never hit it
                 ["EntraId:TenantId"] = "00000000-0000-0000-0000-000000000000",
                 ["EntraId:ClientId"] = "00000000-0000-0000-0000-000000000001"
             });
-        });
-
-        // Replace the SQLite DbContext registration with SQL Server pointed at
-        // the per-test database on the shared Testcontainers instance.
-        // Remove ALL three descriptor types so no SQLite provider lingers alongside SQL Server.
-        builder.ConfigureServices(services =>
-        {
-            var descriptors = services
-                .Where(d =>
-                    d.ServiceType == typeof(DbContextOptions<QuoteDbContext>) ||
-                    d.ServiceType == typeof(DbContextOptions) ||
-                    d.ServiceType == typeof(QuoteDbContext))
-                .ToList();
-            foreach (var descriptor in descriptors)
-                services.Remove(descriptor);
-
-            services.AddDbContext<QuoteDbContext>(options =>
-                options.UseSqlServer(_connectionString));
         });
     }
 
