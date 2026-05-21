@@ -56,10 +56,10 @@ Passed!  - Failed: 0, Passed: 14, Skipped: 0, Total: 14, Duration: 7 s
 
 ## PR & CI
 
-- **PR URL**: https://github.com/thinkbridge-thinkschool/ThinkSchoo-ameykhot-Day1/pulls  
-- **CI Workflow**: `.github/workflows/day3-p3-auth-tests.yml` — triggers on push/PR touching `DAY3/Piece-3-*/**`
-
-> CI run URL will be updated once the push completes and the workflow executes on GitHub Actions.
+- **Branch**: `day3/piece3-lockdown-api` → pushed to `origin`
+- **PR**: https://github.com/thinkbridge-thinkschool/ThinkSchoo-ameykhot-Day1/pull/new/day3/piece3-lockdown-api  
+- **CI Workflow file**: `.github/workflows/day3-p3-auth-tests.yml`
+- **CI runs**: https://github.com/thinkbridge-thinkschool/ThinkSchoo-ameykhot-Day1/actions/workflows/day3-p3-auth-tests.yml
 
 ---
 
