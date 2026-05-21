@@ -50,11 +50,16 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>
 
         // Replace the SQLite DbContext registration with SQL Server pointed at
         // the per-test database on the shared Testcontainers instance.
+        // Remove ALL three descriptor types so no SQLite provider lingers alongside SQL Server.
         builder.ConfigureServices(services =>
         {
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(DbContextOptions<QuoteDbContext>));
-            if (descriptor is not null)
+            var descriptors = services
+                .Where(d =>
+                    d.ServiceType == typeof(DbContextOptions<QuoteDbContext>) ||
+                    d.ServiceType == typeof(DbContextOptions) ||
+                    d.ServiceType == typeof(QuoteDbContext))
+                .ToList();
+            foreach (var descriptor in descriptors)
                 services.Remove(descriptor);
 
             services.AddDbContext<QuoteDbContext>(options =>
