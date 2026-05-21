@@ -103,9 +103,24 @@ public async Task QuoteOwnerPolicy_WhenUserIsNotOwner_Fails()
 }
 ```
 
-**All 9 tests pass:**
+**Actual terminal output (`dotnet test --logger "console;verbosity=detailed"`):**
 ```
-Passed! Failed: 0, Passed: 9
+  QuotesApi -> ...\bin\Debug\net10.0\QuotesApi.dll
+  QuotesApi.Tests -> ...\bin\Debug\net10.0\QuotesApi.Tests.dll
+Test run for QuotesApi.Tests.dll (.NETCoreApp,Version=v10.0)
+
+  Passed QuotesApi.Tests.QuoteFactoryTests.Create_WithExplicitTimestamp_UsesProvidedTimestamp [17 ms]
+  Passed QuotesApi.Tests.QuoteFactoryTests.Create_UsesClockUtcNow_ForCreatedAt [1 ms]
+  Passed QuotesApi.Tests.AuthorizationPolicyTests.CanEditQuotesPolicy_WithoutScopeClaim_Fails [148 ms]
+  Passed QuotesApi.Tests.AuthorizationPolicyTests.QuoteOwnerPolicy_WhenQuoteHasNoOwner_Fails [22 ms]
+  Passed QuotesApi.Tests.AuthorizationPolicyTests.QuoteOwnerPolicy_WhenUserIsNotOwner_Fails [3 ms]
+  Passed QuotesApi.Tests.AuthorizationPolicyTests.QuoteOwnerPolicy_FullPipeline_WhenNotOwner_ReturnsForbid [4 ms]
+  Passed QuotesApi.Tests.AuthorizationPolicyTests.CanEditQuotesPolicy_WithScopeClaim_Succeeds [3 ms]
+  Passed QuotesApi.Tests.AuthorizationPolicyTests.QuoteOwnerPolicy_WhenUserIsOwner_Succeeds [3 ms]
+  Passed QuotesApi.Tests.AuthTokenServiceTests.Refresh_WhenTokenReused_RevokesEntireChain [4 s]
+
+Test Run Successful.
+     Passed: 9
 ```
 
 ---
