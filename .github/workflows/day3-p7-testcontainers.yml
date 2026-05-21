@@ -50,12 +50,18 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
-      # Docker is pre-installed on ubuntu-latest; open the socket to non-root users.
+      # Open the Docker socket to non-root processes (the dotnet test runner).
       - name: Fix Docker socket permissions
         run: sudo chmod 666 /var/run/docker.sock
 
-      # Pre-pull caches the ~1.4 GB image so it is available before dotnet test
-      # starts; also surfaces any registry / network failures as a clear step error.
+      # Verify the daemon is reachable AND that container execution works —
+      # not just that the socket is open.
+      - name: Smoke-test Docker
+        run: |
+          docker info
+          docker run --rm hello-world
+
+      # Pre-pull caches the ~1.4 GB image so Testcontainers finds it locally.
       - name: Pre-pull SQL Server image
         run: docker pull mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04
 
@@ -71,8 +77,10 @@ jobs:
         working-directory: "DAY3/Piece-7-Real SQL Server in CI with Testcontainers/QuotesAPI-Amey/Quotes.Tests.Integration"
         run: dotnet test --no-build --configuration Release --logger "console;verbosity=detailed"
         env:
-          # Disable the Ryuk resource-reaper sidecar. Ryuk tries to call back to
-          # the runner host on a random port; GitHub Actions network rules block
-          # that, killing the SQL Server container mid-run. Safe to disable because
-          # the ephemeral runner VM cleans up all containers on job completion.
+          # Testcontainers .NET 4.x needs DOCKER_HOST to locate the daemon socket.
+          DOCKER_HOST: "unix:///var/run/docker.sock"
+          # Tells Testcontainers where to mount the socket inside helper containers.
+          TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: "/var/run/docker.sock"
+          # Disable Ryuk — it calls back to the runner host on a random port which
+          # GitHub Actions network rules block, killing containers mid-run.
           TESTCONTAINERS_RYUK_DISABLED: "true"
