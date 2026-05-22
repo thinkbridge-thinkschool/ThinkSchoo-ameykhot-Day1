@@ -80,6 +80,14 @@ Open **http://localhost:16686** → select service `QuotesApi` → find the trac
 
 ---
 
+### Trace screenshot — Jaeger UI
+
+Nested spans for `POST /api/auth/login` (ASP.NET Core → EF Core SELECT → custom `issue-token-pair` → EF Core INSERT):
+
+![Jaeger trace overview](../Jagger.png)
+![Jaeger nested spans detail](../Jagger%20outpu.png)
+![Jaeger timeline view](../Jagger%20time.png)
+
 ### Trace structure for `POST /api/auth/login`
 
 A login call produces nested spans visible in Jaeger:
