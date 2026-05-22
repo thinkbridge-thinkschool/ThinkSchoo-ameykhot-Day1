@@ -59,15 +59,14 @@ jobs:
             echo "::error::No coverage.cobertura.xml found — did --collect:\"XPlat Code Coverage\" run?"
             exit 1
           fi
-          python3 - "$COVERAGE_FILE" <<'EOF'
+          python3 -c "
           import sys, xml.etree.ElementTree as ET
-          path = sys.argv[1]
-          root = ET.parse(path).getroot()
-          rate = float(root.attrib.get("line-rate", "0"))
+          root = ET.parse('$COVERAGE_FILE').getroot()
+          rate = float(root.attrib.get('line-rate', '0'))
           pct = rate * 100
-          print(f"Line coverage: {pct:.1f}%")
+          print(f'Line coverage: {pct:.1f}%')
           if rate < 0.70:
-              print(f"::error::Coverage {pct:.1f}% is below the required 70% threshold")
+              print(f'::error::Coverage {pct:.1f}% is below the required 70% threshold')
               sys.exit(1)
-          print(f"Coverage {pct:.1f}% meets the ≥70% requirement")
-          EOF
+          print(f'Coverage {pct:.1f}% meets the >=70% requirement')
+          "
