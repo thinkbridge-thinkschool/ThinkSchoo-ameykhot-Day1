@@ -40,7 +40,31 @@ dotnet test \
   -p:CoverletOutput="../coverage.xml"
 ```
 
-**Result:** Passed! — Failed: 0, Passed: 87, Skipped: 0
+**Actual output:**
+
+```
+Test run for ...Quotes.Tests.Unit.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    87, Skipped:     0, Total:    87, Duration: 13 s - Quotes.Tests.Unit.dll (net10.0)
+
+  Calculating coverage result...
+   Generating report '...QuotesAPI-Amey/coverage.xml'
+
++-----------+-------+--------+--------+
+| Module    | Line  | Branch | Method |
++-----------+-------+--------+--------+
+| QuotesApi | 94.8% | 82.82% | 100%   |
++-----------+-------+--------+--------+
+
++---------+-------+--------+--------+
+|         | Line  | Branch | Method |
++---------+-------+--------+--------+
+| Total   | 94.8% | 82.82% | 100%   |
++---------+-------+--------+--------+
+| Average | 94.8% | 82.82% | 100%   |
++---------+-------+--------+--------+
+```
 
 ---
 
