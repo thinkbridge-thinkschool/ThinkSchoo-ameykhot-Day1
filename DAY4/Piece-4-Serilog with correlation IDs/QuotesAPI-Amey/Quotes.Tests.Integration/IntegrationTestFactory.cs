@@ -4,33 +4,43 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
-using QuotesApi.Data;
 
 namespace Quotes.Tests.Integration;
 
-// One factory = one isolated SQLite file.
+// One factory = one isolated SQL Server database (unique name per instance).
 // xUnit constructs a new test-class instance per test method, so putting
-// the factory in the constructor gives each test its own clean database.
+// the factory in the constructor gives each test its own clean database
+// on the shared SQL Server container.
 public sealed class IntegrationTestFactory : WebApplicationFactory<Program>
 {
     public const string TestJwtKey = "ThinkSchoolDay2JwtSigningKey-UseAtLeast32Chars";
 
-    private readonly string _dbPath = Path.Combine(
-        Path.GetTempPath(),
-        $"quotes_int_{Guid.NewGuid():N}.db");
+    private readonly string _connectionString;
+
+    public IntegrationTestFactory(string masterConnectionString)
+    {
+        // Stamp a unique catalog name so every factory instance gets its own DB.
+        var csb = new SqlConnectionStringBuilder(masterConnectionString)
+        {
+            InitialCatalog = $"QuotesTest_{Guid.NewGuid():N}"
+        };
+        _connectionString = csb.ConnectionString;
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // ConfigureAppConfiguration runs before AddInfrastructure, so setting
+        // "DatabaseProvider" = "SqlServer" here causes AddInfrastructure to call
+        // UseSqlServer instead of UseSqlite — only ONE provider is ever registered.
         builder.ConfigureAppConfiguration((_, cfg) =>
         {
             cfg.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:DefaultConnection"] = $"Data Source={_dbPath}",
+                ["ConnectionStrings:DefaultConnection"] = _connectionString,
+                ["DatabaseProvider"]                   = "SqlServer",
                 ["Jwt:Key"]                            = TestJwtKey,
                 ["Jwt:AccessTokenLifetimeSeconds"]     = "900",
                 // Fake Entra values — OIDC discovery is lazy so tests never hit it
@@ -38,27 +48,6 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>
                 ["EntraId:ClientId"] = "00000000-0000-0000-0000-000000000001"
             });
         });
-
-        // ConfigureTestServices runs AFTER AddInfrastructure, so our removal wins.
-        // This guarantees each factory uses its own GUID-named SQLite file even
-        // when Release-mode parallel startup races through ConfigureAppConfiguration.
-        builder.ConfigureTestServices(services =>
-        {
-            var existing = services.SingleOrDefault(
-                d => d.ServiceType == typeof(DbContextOptions<QuoteDbContext>));
-            if (existing is not null)
-                services.Remove(existing);
-
-            services.AddDbContext<QuoteDbContext>(options =>
-                options.UseSqlite($"Data Source={_dbPath}"));
-        });
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        base.Dispose(disposing);
-        foreach (var f in new[] { _dbPath, _dbPath + "-shm", _dbPath + "-wal" })
-            if (File.Exists(f)) File.Delete(f);
     }
 
     public HttpClient CreateAnonymousClient() => CreateClient();
