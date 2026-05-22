@@ -1,7 +1,10 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
@@ -10,30 +13,34 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
+using QuotesApi.Data;
 using Xunit;
 
 namespace Quotes.Tests.Unit;
 
-// ── Shared WebApplicationFactory (SQLite in temp file, cleared per instance) ─
+// ── Shared WebApplicationFactory — unique in-memory SQLite per instance ───────
 
 public sealed class QuotesApiFactory : WebApplicationFactory<Program>
 {
-    private readonly string _dbPath = Path.Combine(
-        Path.GetTempPath(),
-        $"quotes_unit_{Guid.NewGuid():N}.db");
+    // A persistent open connection keeps the in-memory SQLite database alive for
+    // the entire factory lifetime. Without this, EF Core closes the connection after
+    // EnsureCreated() and the schema is destroyed before the next query runs.
+    private readonly SqliteConnection _keepAlive = new("DataSource=:memory:");
 
-    // Must match the key in appsettings.json (config override with the same key avoids mismatches)
+    // Must match the key in appsettings.json (avoids key mismatch during JWT validation)
     public const string JwtKey = "ThinkSchoolDay2JwtSigningKey-UseAtLeast32Chars";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        _keepAlive.Open();
+
         // Fix the content-root path issue caused by apostrophe in folder name
         builder.UseContentRoot(AppContext.BaseDirectory);
+
         builder.ConfigureAppConfiguration((_, cfg) =>
         {
             cfg.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:DefaultConnection"] = $"Data Source={_dbPath}",
                 ["DatabaseProvider"] = "Sqlite",
                 ["Jwt:Key"] = JwtKey,
                 ["Jwt:AccessTokenLifetimeSeconds"] = "900",
@@ -41,13 +48,25 @@ public sealed class QuotesApiFactory : WebApplicationFactory<Program>
                 ["EntraId:ClientId"] = "00000000-0000-0000-0000-000000000001"
             });
         });
+
+        builder.ConfigureServices(services =>
+        {
+            // Remove the connection-string-based DbContext registered by AddInfrastructure
+            var descriptor = services.SingleOrDefault(d =>
+                d.ServiceType == typeof(DbContextOptions<QuoteDbContext>));
+            if (descriptor != null)
+                services.Remove(descriptor);
+
+            // Share the persistent connection: schema survives across EF Core open/close cycles
+            services.AddDbContext<QuoteDbContext>(options =>
+                options.UseSqlite(_keepAlive));
+        });
     }
 
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        foreach (var f in new[] { _dbPath, _dbPath + "-shm", _dbPath + "-wal" })
-            if (File.Exists(f)) File.Delete(f);
+        if (disposing) _keepAlive.Dispose();
     }
 }
 

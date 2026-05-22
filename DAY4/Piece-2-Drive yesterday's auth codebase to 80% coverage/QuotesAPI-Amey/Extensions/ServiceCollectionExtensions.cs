@@ -45,10 +45,13 @@ public static class ServiceCollectionExtensions
         try
         {
             logger.LogInformation("Applying database schema...");
-            // EnsureCreated is safe for all providers — avoids IsSqlite() which
-            // crashes when two providers are registered (e.g. in integration tests).
+            // EnsureCreated only creates the schema when the DB is brand new.
+            // For in-memory SQLite (tests) it is always fresh; for file-based SQLite
+            // (dev/prod) it is a no-op when tables already exist (returns false).
             dbContext.Database.EnsureCreated();
 
+            // Guard against re-seeding when the factory is reused across tests
+            // or when a dev DB already contains the seed user.
             if (!dbContext.Users.Any())
             {
                 dbContext.Users.Add(new User
