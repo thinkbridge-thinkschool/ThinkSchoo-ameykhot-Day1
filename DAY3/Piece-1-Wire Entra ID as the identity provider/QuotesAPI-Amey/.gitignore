@@ -2,11 +2,6 @@
 bin/
 obj/
 
-## Test output
-TestResults/
-coverage.xml
-coverage.unit.xml
-
 ## SQLite database files
 *.db
 *.db-shm

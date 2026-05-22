@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Coverage is scoped to the domain/service/validator layer.
+  Infrastructure code (Data, Migrations, Middleware, Extensions, Program.cs)
+  is excluded because it is exercised by integration tests, not unit tests.
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Include>[QuotesApi]QuotesApi.Services.*,[QuotesApi]QuotesApi.Models.*,[QuotesApi]QuotesApi.Validators.*,[QuotesApi]QuotesApi.Time.*</Include>
+          <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
