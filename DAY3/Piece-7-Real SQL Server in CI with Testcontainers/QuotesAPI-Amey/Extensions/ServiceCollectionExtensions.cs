@@ -20,8 +20,11 @@ public static class ServiceCollectionExtensions
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection not found in configuration");
 
-        services.AddDbContext<QuoteDbContext>(options =>
-            options.UseSqlite(connectionString));
+        var provider = configuration.GetValue<string>("DatabaseProvider") ?? "Sqlite";
+        if (provider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase))
+            services.AddDbContext<QuoteDbContext>(options => options.UseSqlServer(connectionString));
+        else
+            services.AddDbContext<QuoteDbContext>(options => options.UseSqlite(connectionString));
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddScoped<IQuoteFactory, QuoteFactory>();
@@ -42,12 +45,9 @@ public static class ServiceCollectionExtensions
         try
         {
             logger.LogInformation("Applying database schema...");
-            // SQLite migrations use SQLite-specific column types; use EnsureCreated
-            // for any other provider (e.g. SQL Server in Testcontainers tests).
-            if (dbContext.Database.IsSqlite())
-                dbContext.Database.Migrate();
-            else
-                dbContext.Database.EnsureCreated();
+            // EnsureCreated is safe for all providers — avoids IsSqlite() which
+            // crashes when two providers are registered (e.g. in integration tests).
+            dbContext.Database.EnsureCreated();
 
             if (!dbContext.Users.Any())
             {

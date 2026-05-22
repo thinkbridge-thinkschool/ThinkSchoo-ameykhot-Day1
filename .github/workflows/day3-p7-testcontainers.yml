@@ -40,7 +40,6 @@ jobs:
   integration-tests:
     name: Integration Tests – Real SQL Server via Testcontainers (.NET 10)
     runs-on: ubuntu-latest
-    # ubuntu-latest has Docker pre-installed; Testcontainers pulls mcr.microsoft.com/mssql/server:2022-latest
 
     steps:
       - name: Checkout
@@ -50,6 +49,21 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
+
+      # Open the Docker socket to non-root processes (the dotnet test runner).
+      - name: Fix Docker socket permissions
+        run: sudo chmod 666 /var/run/docker.sock
+
+      # Verify the daemon is reachable AND that container execution works —
+      # not just that the socket is open.
+      - name: Smoke-test Docker
+        run: |
+          docker info
+          docker run --rm hello-world
+
+      # Pre-pull caches the ~1.4 GB image so Testcontainers finds it locally.
+      - name: Pre-pull SQL Server image
+        run: docker pull mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04
 
       - name: Restore
         working-directory: "DAY3/Piece-7-Real SQL Server in CI with Testcontainers/QuotesAPI-Amey/Quotes.Tests.Integration"
@@ -63,6 +77,10 @@ jobs:
         working-directory: "DAY3/Piece-7-Real SQL Server in CI with Testcontainers/QuotesAPI-Amey/Quotes.Tests.Integration"
         run: dotnet test --no-build --configuration Release --logger "console;verbosity=detailed"
         env:
-          # Testcontainers uses the Docker socket; these env vars are automatically
-          # available on ubuntu-latest GitHub Actions runners.
-          DOCKER_HOST: unix:///var/run/docker.sock
+          # Testcontainers .NET 4.x needs DOCKER_HOST to locate the daemon socket.
+          DOCKER_HOST: "unix:///var/run/docker.sock"
+          # Tells Testcontainers where to mount the socket inside helper containers.
+          TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: "/var/run/docker.sock"
+          # Disable Ryuk — it calls back to the runner host on a random port which
+          # GitHub Actions network rules block, killing containers mid-run.
+          TESTCONTAINERS_RYUK_DISABLED: "true"

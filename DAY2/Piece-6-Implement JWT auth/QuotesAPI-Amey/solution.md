@@ -1,86 +1,75 @@
-# Piece-6 Solution Submission - JWT Auth
+=== Login Endpoint ===
 
-## Objective
-Implement minimal JWT authentication in Quotes API so quote write operations require a valid bearer token while read operations stay public.
+```csharp
+[HttpPost("/api/auth/login")]
+public async Task<IActionResult> Login(LoginRequest request)
+{
+    var user = await _context.Users
+        .FirstOrDefaultAsync(u => u.Email == request.Email);
 
-## Deliverables Completed
+    if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        return Unauthorized("Invalid email or password");
 
-### 1) Auth login endpoint
-- Added `POST /api/auth/login`
-- Accepts JSON `{ email, password }`
-- Validates credentials using BCrypt
-- Returns:
-  - `access_token`
-  - `refresh_token`
-  - `expires_in`
+    var token = GenerateJwtToken(user);
 
-### 2) Users table and migration
-- Added `User` model with:
-  - `Id: Guid`
-  - `Email: string`
-  - `PasswordHash: string`
-- Updated `QuoteDbContext` with `DbSet<User>`
-- Added model rules:
-  - required email
-  - unique email index
-  - required password hash
-- Created migration: `20260520111237_AddUsersTable`
-
-### 3) BCrypt password handling
-- Installed `BCrypt.Net-Next`
-- Login verifies hashed password via `BCrypt.Net.BCrypt.Verify(...)`
-- No plain-text password storage
-
-### 4) JWT wiring in Program.cs
-- Installed `Microsoft.AspNetCore.Authentication.JwtBearer`
-- Added:
-  - `AddAuthentication().AddJwtBearer(...)`
-  - `AddAuthorization()`
-  - `UseAuthentication()` and `UseAuthorization()`
-- JWT settings:
-  - HS256 signing
-  - Key from `IConfiguration` (`Jwt:Key`)
-  - Enforced minimum 256-bit key
-  - `ClockSkew = TimeSpan.Zero`
-
-### 5) Endpoint authorization
-- Protected:
-  - `POST /api/quotes`
-  - `DELETE /api/quotes/{id}`
-- Kept open:
-  - `GET /api/quotes`
-  - `GET /api/quotes/{id}`
-
-### 6) Evidence tests (curl)
-`curl_output.txt` contains captured responses for:
-1. POST without token -> `401 Unauthorized`
-2. POST with valid token -> success (`201 Created` from current endpoint behavior)
-3. POST with expired token -> `401 Unauthorized` and `WWW-Authenticate: Bearer error="invalid_token"...`
-
-## Files Changed
-- `Program.cs`
-- `QuotesApi.csproj`
-- `Data/QuoteDbContext.cs`
-- `Extensions/ServiceCollectionExtensions.cs`
-- `Models/User.cs`
-- `appsettings.json`
-- `appsettings.Development.json`
-- `Migrations/20260520111237_AddUsersTable.cs`
-- `Migrations/20260520111237_AddUsersTable.Designer.cs`
-- `Migrations/QuoteDbContextModelSnapshot.cs`
-- `README.md`
-- `solution.md`
-- `curl_output.txt`
-
-## Run Commands Used
-```bash
-dotnet ef migrations add AddUsersTable
-dotnet build
-dotnet run --urls http://localhost:5000
+    return Ok(new
+    {
+        access_token = token,
+        refresh_token = Guid.NewGuid().ToString(),
+        expires_in = 900
+    });
+}
 ```
 
-## Login Test User
-- Email: `user@test.com`
-- Password: `password123`
+=== Curl 1 - No Token ===
 
-This user is seeded automatically on startup if no users exist (for local test convenience).
+Command:
+
+```bash
+curl -X POST http://localhost:5000/api/quotes \
+  -H "Content-Type: application/json" \
+  -d '{"author":"test","text":"hello"}'
+```
+
+Response:
+
+```text
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer
+```
+
+=== Curl 2 - Valid Token ===
+
+Command:
+
+```bash
+curl -X POST http://localhost:5000/api/quotes \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -d '{"author":"test","text":"hello secure"}'
+```
+
+Response:
+
+```text
+HTTP/1.1 201 Created
+Location: /api/quotes/3
+```
+
+=== Curl 3 - Expired Token ===
+
+Command:
+
+```bash
+curl -X POST http://localhost:5000/api/quotes \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...(expired)" \
+  -d '{"author":"test","text":"hello secure"}'
+```
+
+Response:
+
+```text
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer error="invalid_token", error_description="The token expired at '05/20/2026 11:22:46'"
+```

@@ -1,0 +1,231 @@
+info: Program[0]
+      Applying EF Core migrations...
+warn: Microsoft.EntityFrameworkCore.Model.Validation[30002]
+      The entity type 'CollectionItem' has composite key '{'CollectionId', 'QuoteId'}' which is configured to use generated values. SQLite does not support generated values on composite keys.
+info: Microsoft.EntityFrameworkCore.Migrations[20411]
+      Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (42ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsLock' AND "type" = 'table';
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (6ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-05-21 06:47:49.1250387+00:00');
+      SELECT changes();
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (10ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+          "MigrationId" TEXT NOT NULL CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY,
+          "ProductVersion" TEXT NOT NULL
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "MigrationId", "ProductVersion"
+      FROM "__EFMigrationsHistory"
+      ORDER BY "MigrationId";
+info: Microsoft.EntityFrameworkCore.Migrations[20402]
+      Applying migration '20260520123915_AddRefreshTokensTable'.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE "RefreshTokens" (
+          "Id" TEXT NOT NULL CONSTRAINT "PK_RefreshTokens" PRIMARY KEY,
+          "Token" TEXT NOT NULL,
+          "UserId" TEXT NOT NULL,
+          "Family" TEXT NOT NULL,
+          "ExpiresAt" TEXT NOT NULL,
+          "RevokedAt" TEXT NULL,
+          "ReplacedByToken" TEXT NULL,
+          CONSTRAINT "FK_RefreshTokens_Users_UserId" FOREIGN KEY ("UserId") REFERENCES "Users" ("Id") ON DELETE CASCADE
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX "IX_RefreshTokens_Family" ON "RefreshTokens" ("Family");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX "IX_RefreshTokens_Token" ON "RefreshTokens" ("Token");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX "IX_RefreshTokens_UserId" ON "RefreshTokens" ("UserId");
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+      VALUES ('20260520123915_AddRefreshTokensTable', '10.0.0');
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "__EFMigrationsLock";
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Users" AS "u")
+info: Program[0]
+      Migrations applied successfully
+info: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[63]
+      User profile is available. Using 'C:\Users\admin\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5100
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\admin\Desktop\Thinkschool\DAY3\Piece-1-Wire Entra ID as the identity provider\QuotesAPI-Amey
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://localhost:5100/api/auth/login - application/json 50
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/auth/login => Login'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (15ms) [Parameters=[@request_Email='?' (Size = 13)], CommandType='Text', CommandTimeout='30']
+      SELECT "u"."Id", "u"."Email", "u"."PasswordHash"
+      FROM "Users" AS "u"
+      WHERE "u"."Email" = @request_Email
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 32), @p3='?', @p4='?' (DbType = DateTime), @p5='?' (Size = 44), @p6='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "RefreshTokens" ("Id", "ExpiresAt", "Family", "ReplacedByToken", "RevokedAt", "Token", "UserId")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6);
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type '<>f__AnonymousType0`3' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/auth/login => Login'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://localhost:5100/api/auth/login - 200 - application/json;+charset=utf-8 2357.8752ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:5100/api/quotes - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/quotes/ => GetQuotes'
+info: QuotesApi.Data.QuoteRepository[0]
+      Fetching quotes with page=1, size=10
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM "Quotes" AS "q"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@p0='?' (DbType = Int32), @p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "q"."Id", "q"."Author", "q"."CreatedAt", "q"."Text"
+      FROM "Quotes" AS "q"
+      ORDER BY "q"."CreatedAt" DESC
+      LIMIT @p0 OFFSET @p
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type '<>f__AnonymousType1`2' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/quotes/ => GetQuotes'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:5100/api/quotes - 200 - application/json;+charset=utf-8 361.6026ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://localhost:5100/api/quotes - application/json 38
+info: Microsoft.AspNetCore.Authorization.DefaultAuthorizationService[2]
+      Authorization failed. These requirements were not met:
+      DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+info: Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerHandler[12]
+      AuthenticationScheme: Internal was challenged.
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://localhost:5100/api/quotes - 401 0 - 23.3303ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://localhost:5100/api/quotes - application/json 105
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/quotes/ => CreateQuote'
+info: QuotesApi.Data.QuoteRepository[0]
+      Creating quote by Amey Khot
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (Size = 9), @p1='?' (DbType = DateTime), @p2='?' (Size = 73)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Quotes" ("Author", "CreatedAt", "Text")
+      VALUES (@p0, @p1, @p2)
+      RETURNING "Id";
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[1]
+      Setting HTTP status code 201.
+info: Microsoft.AspNetCore.Http.Result.CreatedResult[3]
+      Writing value of type 'Quote' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/quotes/ => CreateQuote'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://localhost:5100/api/quotes - 201 - application/json;+charset=utf-8 280.9016ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://localhost:5100/api/auth/login - application/json 50
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/auth/login => Login'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@request_Email='?' (Size = 13)], CommandType='Text', CommandTimeout='30']
+      SELECT "u"."Id", "u"."Email", "u"."PasswordHash"
+      FROM "Users" AS "u"
+      WHERE "u"."Email" = @request_Email
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 32), @p3='?', @p4='?' (DbType = DateTime), @p5='?' (Size = 44), @p6='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "RefreshTokens" ("Id", "ExpiresAt", "Family", "ReplacedByToken", "RevokedAt", "Token", "UserId")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6);
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type '<>f__AnonymousType0`3' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/auth/login => Login'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://localhost:5100/api/auth/login - 200 - application/json;+charset=utf-8 593.3951ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://localhost:5100/api/auth/refresh - application/json 108
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/auth/refresh => Refresh'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@hashedIncomingToken='?' (Size = 44)], CommandType='Text', CommandTimeout='30']
+      SELECT "r"."Id", "r"."ExpiresAt", "r"."Family", "r"."ReplacedByToken", "r"."RevokedAt", "r"."Token", "r"."UserId", "u"."Id", "u"."Email", "u"."PasswordHash"
+      FROM "RefreshTokens" AS "r"
+      INNER JOIN "Users" AS "u" ON "r"."UserId" = "u"."Id"
+      WHERE "r"."Token" = @hashedIncomingToken
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (Size = 32), @p3='?', @p4='?' (DbType = DateTime), @p5='?' (Size = 44), @p6='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "RefreshTokens" ("Id", "ExpiresAt", "Family", "ReplacedByToken", "RevokedAt", "Token", "UserId")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p2='?' (DbType = Guid), @p0='?' (Size = 44), @p1='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      UPDATE "RefreshTokens" SET "ReplacedByToken" = @p0, "RevokedAt" = @p1
+      WHERE "Id" = @p2
+      RETURNING 1;
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type '<>f__AnonymousType0`3' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/auth/refresh => Refresh'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://localhost:5100/api/auth/refresh - 200 - application/json;+charset=utf-8 197.9916ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://localhost:5100/api/auth/refresh - application/json 108
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/auth/refresh => Refresh'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@hashedIncomingToken='?' (Size = 44)], CommandType='Text', CommandTimeout='30']
+      SELECT "r"."Id", "r"."ExpiresAt", "r"."Family", "r"."ReplacedByToken", "r"."RevokedAt", "r"."Token", "r"."UserId", "u"."Id", "u"."Email", "u"."PasswordHash"
+      FROM "RefreshTokens" AS "r"
+      INNER JOIN "Users" AS "u" ON "r"."UserId" = "u"."Id"
+      WHERE "r"."Token" = @hashedIncomingToken
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@family='?' (Size = 32)], CommandType='Text', CommandTimeout='30']
+      SELECT "r"."Id", "r"."ExpiresAt", "r"."Family", "r"."ReplacedByToken", "r"."RevokedAt", "r"."Token", "r"."UserId"
+      FROM "RefreshTokens" AS "r"
+      WHERE "r"."Family" = @family AND "r"."RevokedAt" IS NULL
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Guid), @p0='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      UPDATE "RefreshTokens" SET "RevokedAt" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;
+warn: QuotesApi.Services.AuthTokenService[0]
+      SECURITY_EVENT Refresh token reuse detected. UserId: 6973b9e4-1363-41b3-b9f9-9c14f1ff87d1, Family: e683b20e4e194cfd85ef512bed511e93
+info: Microsoft.AspNetCore.Http.Result.JsonResult[1]
+      Setting HTTP status code 401.
+info: Microsoft.AspNetCore.Http.Result.JsonResult[3]
+      Writing value of type 'ProblemDetails' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/auth/refresh => Refresh'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://localhost:5100/api/auth/refresh - 401 - application/json;+charset=utf-8 80.1928ms

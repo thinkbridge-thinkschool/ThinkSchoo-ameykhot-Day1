@@ -4,8 +4,12 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using QuotesApi.Data;
 
 namespace Quotes.Tests.Integration;
 
@@ -33,6 +37,20 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>
                 ["EntraId:TenantId"] = "00000000-0000-0000-0000-000000000000",
                 ["EntraId:ClientId"] = "00000000-0000-0000-0000-000000000001"
             });
+        });
+
+        // ConfigureTestServices runs AFTER AddInfrastructure, so our removal wins.
+        // This guarantees each factory uses its own GUID-named SQLite file even
+        // when Release-mode parallel startup races through ConfigureAppConfiguration.
+        builder.ConfigureTestServices(services =>
+        {
+            var existing = services.SingleOrDefault(
+                d => d.ServiceType == typeof(DbContextOptions<QuoteDbContext>));
+            if (existing is not null)
+                services.Remove(existing);
+
+            services.AddDbContext<QuoteDbContext>(options =>
+                options.UseSqlite($"Data Source={_dbPath}"));
         });
     }
 
