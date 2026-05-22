@@ -4,6 +4,75 @@ A modern ASP.NET Core 10 API for managing quotes and collections, built with **D
 
 ---
 
+## Day 4 – Piece 4: Serilog with Correlation IDs
+
+Replaced the default Microsoft.Extensions.Logging provider with **Serilog**. Every log line produced during an HTTP request carries a `TraceId` property that links all log entries for that request — across layers (endpoint handler, repository, auth service, exception middleware) — into a single correlated trace.
+
+### Packages
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `Serilog.AspNetCore` | 10.0.0 | Core integration — reads config from `appsettings.json`, bridges `ILogger<T>` |
+| `Serilog.Sinks.Console` | 6.1.1 | Structured console output |
+
+### How it works
+
+**`Program.cs`** — Serilog replaces the default logger and the correlation middleware stamps every request:
+
+```csharp
+builder.Host.UseSerilog((context, services, configuration) =>
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
+
+// In the middleware pipeline — must be FIRST:
+app.Use((ctx, next) =>
+{
+    using (LogContext.PushProperty("TraceId", ctx.TraceIdentifier))
+        return next();
+});
+```
+
+**`appsettings.json`** — log levels per category:
+
+```json
+"Serilog": {
+  "MinimumLevel": {
+    "Default": "Information",
+    "Override": {
+      "Microsoft.AspNetCore": "Warning",
+      "Microsoft.EntityFrameworkCore.Database.Command": "Warning",
+      "System": "Warning"
+    }
+  },
+  "WriteTo": [{
+    "Name": "Console",
+    "Args": {
+      "outputTemplate": "[{Timestamp:HH:mm:ss} {Level:u3}] [{TraceId}] {SourceContext}: {Message:lj}{NewLine}{Exception}"
+    }
+  }]
+}
+```
+
+**`appsettings.Development.json`** — EF Core SQL and own code go to `Debug` in dev, `Warning` in prod.
+
+### Five correlated log lines from one `POST /api/quotes` request
+
+All share TraceId `ed069b9899766ad06ccd63b542423cad`:
+
+```
+[14:47:32 INF] [ed069b9899766ad06ccd63b542423cad] Program: Received CreateQuote request for author Marcus Aurelius
+[14:47:32 INF] [ed069b9899766ad06ccd63b542423cad] Program: Validation passed for author Marcus Aurelius — building quote entity
+[14:47:32 INF] [ed069b9899766ad06ccd63b542423cad] Program: Assigned OwnerId 9bb72369-5bff-47a4-8e58-365edf9e4491 to new quote
+[14:47:32 INF] [ed069b9899766ad06ccd63b542423cad] QuotesApi.Data.QuoteRepository: Creating quote by Marcus Aurelius
+[14:47:32 INF] [ed069b9899766ad06ccd63b542423cad] Program: Created quote 2 by author Marcus Aurelius for user 9bb72369-5bff-47a4-8e58-365edf9e4491
+```
+
+See [SOLUTION.md](SOLUTION.md) for the full submission including what I learned and what would break this.
+
+---
+
 ## Day 4 – Piece 2: 80% Coverage Achievement
 
 **Coverage results** (migrations excluded):

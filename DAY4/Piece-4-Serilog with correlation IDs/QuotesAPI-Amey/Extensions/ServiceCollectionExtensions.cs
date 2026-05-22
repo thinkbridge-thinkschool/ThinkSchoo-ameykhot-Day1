@@ -109,15 +109,23 @@ public static class EndpointExtensions
         LoginRequest request,
         QuoteDbContext dbContext,
         IAuthTokenService authTokenService,
+        ILogger<Program> logger,
         CancellationToken cancellationToken = default)
     {
+        logger.LogInformation("Login attempt for user {Email}", request.Email);
+
         var user = await dbContext.Users
             .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
 
         if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        {
+            logger.LogWarning("Login failed for user {Email} — invalid credentials", request.Email);
             return Results.Unauthorized();
+        }
 
         var pair = await authTokenService.IssueTokenPairAsync(user, cancellationToken: cancellationToken);
+
+        logger.LogInformation("Login succeeded for user {UserId} ({Email})", user.Id, user.Email);
 
         return Results.Ok(new
         {
@@ -182,7 +190,9 @@ public static class EndpointExtensions
                 Detail = "Page and size must be greater than 0"
             });
 
+        logger.LogInformation("Fetching quotes page {Page} size {Size}", page, size);
         var result = await repository.GetQuotesAsync(page, size, cancellationToken);
+        logger.LogInformation("Returned {Count} of {Total} quotes", result.Items.Count(), result.Total);
         return Results.Ok(new { data = result.Items, pagination = new { result.Page, result.Size, result.Total } });
     }
 
@@ -196,8 +206,12 @@ public static class EndpointExtensions
         IValidator<CreateQuoteRequest> validator,
         CancellationToken cancellationToken = default)
     {
+        logger.LogInformation("Received CreateQuote request for author {Author}", request.Author);
+
         var validation = await validator.ValidateAsync(request, cancellationToken);
         if (!validation.IsValid)
+        {
+            logger.LogWarning("Validation failed for CreateQuote: {ErrorCount} errors", validation.Errors.Count);
             return Results.UnprocessableEntity(new ValidationProblemDetails
             {
                 Title = "One or more validation errors occurred.",
@@ -206,14 +220,20 @@ public static class EndpointExtensions
                     .GroupBy(e => e.PropertyName)
                     .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray())
             });
+        }
 
+        logger.LogInformation("Validation passed for author {Author} — building quote entity", request.Author);
         var quote = quoteFactory.Create(request.Author, request.Text, clock.UtcNow.UtcDateTime);
 
         var userIdStr = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (Guid.TryParse(userIdStr, out var ownerId))
+        {
             quote.OwnerId = ownerId;
+            logger.LogInformation("Assigned OwnerId {OwnerId} to new quote", ownerId);
+        }
 
         var created = await repository.CreateQuoteAsync(quote, cancellationToken);
+        logger.LogInformation("Created quote {QuoteId} by author {Author} for user {UserId}", created.Id, created.Author, userIdStr);
         return Results.Created($"/api/quotes/{created.Id}", created);
     }
 
@@ -237,14 +257,23 @@ public static class EndpointExtensions
     {
         var quote = await repository.GetQuoteByIdAsync(id, cancellationToken);
         if (quote is null)
+        {
+            logger.LogWarning("Delete failed — quote {QuoteId} not found", id);
             return Results.NotFound(new ProblemDetails { Title = "Not Found", Status = 404, Detail = $"Quote with ID {id} not found" });
+        }
 
         // Resource-based check: user must own this specific quote
         var authResult = await authorizationService.AuthorizeAsync(httpContext.User, quote, "quote-owner");
         if (!authResult.Succeeded)
+        {
+            logger.LogWarning("Delete forbidden — user {UserId} does not own quote {QuoteId}",
+                httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), id);
             return Results.Forbid();
+        }
 
         await repository.DeleteQuoteAsync(id, cancellationToken);
+        logger.LogInformation("Deleted quote {QuoteId} by user {UserId}", id,
+            httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier));
         return Results.NoContent();
     }
 
@@ -253,11 +282,14 @@ public static class EndpointExtensions
     private static async Task<IResult> CreateCollection(
         CreateCollectionRequest request,
         ICollectionRepository repo,
+        ILogger<Program> logger,
         CancellationToken cancellationToken = default)
     {
         // DomainException thrown here if name invalid → caught by ExceptionMiddleware → 400
         var collection = new Collection(request.Name, request.OwnerId);
         await repo.AddAsync(collection, cancellationToken);
+        logger.LogInformation("Created collection {CollectionId} named {Name} for owner {OwnerId}",
+            collection.Id, collection.Name, collection.OwnerId);
         return Results.Created($"/api/collections/{collection.Id}", collection);
     }
 

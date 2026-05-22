@@ -7,8 +7,17 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Serilog;
+using Serilog.Context;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Replace default Microsoft logger with Serilog — reads config from "Serilog" section in appsettings
+builder.Host.UseSerilog((context, services, configuration) =>
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
 
 // Add services
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -92,6 +101,13 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddSingleton<IAuthorizationHandler, QuoteOwnerAuthorizationHandler>();
 
 var app = builder.Build();
+
+// Stamp every log line in a request with the ASP.NET Core TraceIdentifier
+app.Use((ctx, next) =>
+{
+    using (LogContext.PushProperty("TraceId", ctx.TraceIdentifier))
+        return next();
+});
 
 // Middleware
 app.UseExceptionMiddleware();
