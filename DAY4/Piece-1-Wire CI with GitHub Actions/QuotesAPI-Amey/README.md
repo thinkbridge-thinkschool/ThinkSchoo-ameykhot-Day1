@@ -994,6 +994,59 @@ public void Create_WhenNoTimestampProvided_UsesClockUtcNow()
 
 ---
 
+## CI with GitHub Actions (Day 4 — Piece 1)
+
+### Workflow: `.github/workflows/ci.yml`
+
+The repository is wired with a GitHub Actions pipeline that runs on **every push to any branch** and on **every pull request targeting `main`**.
+
+```yaml
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+```
+
+### Pipeline steps
+
+| Step | Command |
+|------|---------|
+| Checkout | `actions/checkout@v4` |
+| Setup .NET 10 | `actions/setup-dotnet@v4` with `dotnet-version: "10.0.x"` |
+| Restore | `dotnet restore` |
+| Build | `dotnet build --no-restore` |
+| Test + coverage | `dotnet test --no-build --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage" --settings ../coverage.runsettings` |
+| Upload TRX results | `actions/upload-artifact@v4` (runs even on failure) |
+| Upload coverage XML | `actions/upload-artifact@v4` (runs even on failure) |
+| Check coverage ≥ 70% | Python parses `coverage.cobertura.xml`; exits 1 if `line-rate < 0.70` |
+
+### Coverage configuration — `coverage.runsettings`
+
+Coverage is scoped to the domain/service/validator layer to give a meaningful threshold:
+
+```xml
+<Include>[QuotesApi]QuotesApi.Services.*,
+         [QuotesApi]QuotesApi.Models.*,
+         [QuotesApi]QuotesApi.Validators.*,
+         [QuotesApi]QuotesApi.Time.*</Include>
+```
+
+Infrastructure code (`Data/`, `Migrations/`, `Middleware/`, `Extensions/`) is excluded — it is exercised by integration tests, not unit tests.
+
+### Gate: refuses to merge red CI
+
+Branch protection on `main` requires the **Build & Test (.NET 10)** status check to pass before any PR can be merged.
+
+### How to run locally
+
+```bash
+cd "DAY4/Piece-1-Wire CI with GitHub Actions/QuotesAPI-Amey/Quotes.Tests.Unit"
+dotnet test --collect:"XPlat Code Coverage" --settings ../coverage.runsettings --results-directory TestResults
+```
+
+---
+
 ## 📧 Support
 
 For issues or questions, contact the development team.

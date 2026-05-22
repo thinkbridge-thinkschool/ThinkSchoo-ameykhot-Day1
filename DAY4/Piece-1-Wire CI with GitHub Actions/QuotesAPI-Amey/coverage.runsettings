@@ -15,5 +15,5 @@
         </Configuration>
       </DataCollector>
     </DataCollectors>
-  </RunSettings>
+  </DataCollectionRunSettings>
 </RunSettings>
