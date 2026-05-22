@@ -1,0 +1,61 @@
+name: Day 4 – Piece 2 – 80% Coverage Gate
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "DAY4/Piece-2-Drive yesterday's auth codebase to 80% coverage/**"
+      - ".github/workflows/day4-p2-coverage.yml"
+  pull_request:
+    paths:
+      - "DAY4/Piece-2-Drive yesterday's auth codebase to 80% coverage/**"
+      - ".github/workflows/day4-p2-coverage.yml"
+
+jobs:
+  coverage:
+    name: Unit + Integration Tests with Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        working-directory: "DAY4/Piece-2-Drive yesterday's auth codebase to 80% coverage/QuotesAPI-Amey/Quotes.Tests.Unit"
+        run: dotnet restore
+
+      - name: Build
+        working-directory: "DAY4/Piece-2-Drive yesterday's auth codebase to 80% coverage/QuotesAPI-Amey/Quotes.Tests.Unit"
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run tests with coverage (exclude migrations)
+        working-directory: "DAY4/Piece-2-Drive yesterday's auth codebase to 80% coverage/QuotesAPI-Amey/Quotes.Tests.Unit"
+        run: |
+          dotnet test --no-build --configuration Release \
+            -p:CollectCoverage=true \
+            -p:CoverletOutputFormat=cobertura \
+            "-p:ExcludeByFile=**/Migrations/**" \
+            -p:CoverletOutput="../coverage.xml" \
+            -p:Threshold=80 \
+            -p:ThresholdType=line \
+            -p:ThresholdStat=total \
+            --logger "console;verbosity=normal"
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: "DAY4/Piece-2-Drive yesterday's auth codebase to 80% coverage/QuotesAPI-Amey/coverage.xml"
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "Coverage threshold: 80% line coverage" >> $GITHUB_STEP_SUMMARY
+          echo "See the coverage artifact for the full cobertura.xml report." >> $GITHUB_STEP_SUMMARY
