@@ -1,0 +1,57 @@
+name: Day 5 – Piece 6 – Polly Resilience
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "DAY5/Piece-6-Add Polly resilience to HTTP calls/**"
+      - ".github/workflows/day5-p6-polly.yml"
+  pull_request:
+    paths:
+      - "DAY5/Piece-6-Add Polly resilience to HTTP calls/**"
+      - ".github/workflows/day5-p6-polly.yml"
+
+jobs:
+  polly-resilience:
+    name: Build & Test – Polly resilience (.NET 10)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: "DAY5/Piece-6-Add Polly resilience to HTTP calls/QuotesAPI-Amey/Quotes.Tests.Unit"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run tests
+        run: |
+          dotnet test --no-build --configuration Release \
+            --logger "console;verbosity=normal" \
+            --logger "trx;LogFileName=test-results.trx" \
+            --results-directory TestResults
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: polly-test-results
+          path: "DAY5/Piece-6-Add Polly resilience to HTTP calls/QuotesAPI-Amey/Quotes.Tests.Unit/TestResults/**/*.trx"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Polly Resilience Tests" >> $GITHUB_STEP_SUMMARY
+          echo "Tests verify retry (3×), circuit-breaker (50% failure rate), and timeout (10 s) policies." >> $GITHUB_STEP_SUMMARY
+          echo "ExternalQuoteResilienceTests forces 503 transient failures and asserts retry callbacks fire." >> $GITHUB_STEP_SUMMARY
