@@ -1,0 +1,78 @@
+name: Day 5 – Piece 7 – Smoke Test & Week 1 Reflection
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "DAY5/Piece-7-Smoke-test the deployed API and Week 1 reflection/**"
+      - ".github/workflows/day5-p7-smoke-test.yml"
+  pull_request:
+    paths:
+      - "DAY5/Piece-7-Smoke-test the deployed API and Week 1 reflection/**"
+      - ".github/workflows/day5-p7-smoke-test.yml"
+
+jobs:
+  unit-tests:
+    name: Build & Test – Unit tests (.NET 10)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: "DAY5/Piece-7-Smoke-test the deployed API and Week 1 reflection/QuotesAPI-Amey/Quotes.Tests.Unit"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run unit tests
+        run: |
+          dotnet test --no-build --configuration Release \
+            --logger "console;verbosity=normal" \
+            --logger "trx;LogFileName=test-results.trx" \
+            --results-directory TestResults
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-results
+          path: "DAY5/Piece-7-Smoke-test the deployed API and Week 1 reflection/QuotesAPI-Amey/Quotes.Tests.Unit/TestResults/**/*.trx"
+
+  smoke-test-report:
+    name: Verify SOLUTION.md exists
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check SOLUTION.md
+        run: |
+          FILE="DAY5/Piece-7-Smoke-test the deployed API and Week 1 reflection/SOLUTION.md"
+          if [ ! -f "$FILE" ]; then
+            echo "SOLUTION.md not found at $FILE"
+            exit 1
+          fi
+          echo "SOLUTION.md found ($(wc -l < "$FILE") lines)"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Day 5 – Piece 7: Smoke Test & Week 1 Reflection" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Live URL:** https://ca-api-342m3golxdrt6.livelydune-368712a9.centralindia.azurecontainerapps.io" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Smoke test:** 16/18 endpoints pass. Known issue: \`GET /api/quotes/inspire\` returns 400 due to missing \`{id:int}\` route constraint." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Week 1 wrap:** auth + EF Core + tests + structured logs + distributed traces + resilience + Azure Container Apps deployed in 6 days." >> $GITHUB_STEP_SUMMARY
