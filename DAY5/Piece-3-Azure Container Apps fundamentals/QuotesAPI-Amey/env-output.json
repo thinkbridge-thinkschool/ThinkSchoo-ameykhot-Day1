@@ -1,0 +1,74 @@
+{
+  "id": "/subscriptions/6b3f49de-c9ab-436d-b896-27ebc13a1e3a/resourceGroups/thinkschool-rg/providers/Microsoft.App/managedEnvironments/thinkschool-env",
+  "location": "Central India",
+  "name": "thinkschool-env",
+  "properties": {
+    "appInsightsConfiguration": null,
+    "appLogsConfiguration": {
+      "destination": "log-analytics",
+      "logAnalyticsConfiguration": {
+        "customerId": "ab52cb51-9bf0-425b-b401-230e0598e83f",
+        "dynamicJsonColumns": false,
+        "sharedKey": null
+      }
+    },
+    "availabilityZones": null,
+    "customDomainConfiguration": {
+      "certificateKeyVaultProperties": null,
+      "certificatePassword": null,
+      "certificateValue": null,
+      "customDomainVerificationId": "48A633C3D89FAA11C1889285C26CDC5207E2A8FAD9167F65B27FD15505C56DCE",
+      "dnsSuffix": null,
+      "expirationDate": null,
+      "subjectName": null,
+      "thumbprint": null
+    },
+    "daprAIConnectionString": null,
+    "daprAIInstrumentationKey": null,
+    "daprConfiguration": {
+      "version": "1.16.4-msft.6"
+    },
+    "defaultDomain": "greenbay-3b4cda8d.centralindia.azurecontainerapps.io",
+    "diskEncryptionConfiguration": null,
+    "environmentMode": "WorkloadProfiles",
+    "eventStreamEndpoint": "https://centralindia.azurecontainerapps.dev/subscriptions/6b3f49de-c9ab-436d-b896-27ebc13a1e3a/resourceGroups/thinkschool-rg/managedEnvironments/thinkschool-env/eventstream",
+    "infrastructureResourceGroup": null,
+    "ingressConfiguration": null,
+    "kedaConfiguration": {
+      "version": "2.18.1"
+    },
+    "openTelemetryConfiguration": null,
+    "peerAuthentication": {
+      "mtls": {
+        "enabled": false
+      }
+    },
+    "peerTrafficConfiguration": {
+      "encryption": {
+        "enabled": false
+      }
+    },
+    "provisioningState": "Succeeded",
+    "publicNetworkAccess": "Enabled",
+    "staticIp": "4.224.99.71",
+    "vnetConfiguration": null,
+    "workloadProfiles": [
+      {
+        "enableFips": false,
+        "name": "Consumption",
+        "workloadProfileType": "Consumption"
+      }
+    ],
+    "zoneRedundant": false
+  },
+  "resourceGroup": "thinkschool-rg",
+  "systemData": {
+    "createdAt": "2026-05-23T08:52:23.9472441",
+    "createdBy": "E2K22169@ms.pict.edu",
+    "createdByType": "User",
+    "lastModifiedAt": "2026-05-23T09:19:31.5843466",
+    "lastModifiedBy": "E2K22169@ms.pict.edu",
+    "lastModifiedByType": "User"
+  },
+  "type": "Microsoft.App/managedEnvironments"
+}
