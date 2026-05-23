@@ -18,12 +18,14 @@ using Azure.Monitor.OpenTelemetry.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Azure Key Vault — loads secrets into IConfiguration before any service reads them
-var keyVaultUrl = builder.Configuration["KeyVault:Url"]
-    ?? "https://quotes-api-keyvault1.vault.azure.net/";
-builder.Configuration.AddAzureKeyVault(
-    new Uri(keyVaultUrl),
-    new DefaultAzureCredential());
+// Azure Key Vault — optional; skipped when running without Azure credentials locally
+var keyVaultUrl = builder.Configuration["KeyVault:Url"];
+if (!string.IsNullOrWhiteSpace(keyVaultUrl) &&
+    Uri.TryCreate(keyVaultUrl, UriKind.Absolute, out var kvUri))
+{
+    try { builder.Configuration.AddAzureKeyVault(kvUri, new DefaultAzureCredential()); }
+    catch { /* Key Vault unreachable in local dev — continue without it */ }
+}
 
 // Replace default Microsoft logger with Serilog — reads config from "Serilog" section in appsettings
 builder.Host.UseSerilog((context, services, configuration) =>
@@ -35,12 +37,13 @@ builder.Host.UseSerilog((context, services, configuration) =>
 // Add services
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// OpenTelemetry: ASP.NET Core + EF Core + outbound HTTP + Azure Monitor (App Insights) + OTLP export
-builder.Services.AddOpenTelemetry()
-    .UseAzureMonitor(o =>
-    {
-        o.ConnectionString = builder.Configuration["application-insights-connectionstring1"];
-    })
+// OpenTelemetry: ASP.NET Core + EF Core + outbound HTTP + console + OTLP export
+// Azure Monitor is wired only when the connection string is present (prod/Azure envs)
+var otelBuilder = builder.Services.AddOpenTelemetry();
+var aiConnStr = builder.Configuration["application-insights-connectionstring1"];
+if (!string.IsNullOrWhiteSpace(aiConnStr))
+    otelBuilder.UseAzureMonitor(o => { o.ConnectionString = aiConnStr; });
+otelBuilder
     .ConfigureResource(r => r.AddService("QuotesApi"))
     .WithTracing(t => t
         .AddAspNetCoreInstrumentation()
@@ -50,7 +53,8 @@ builder.Services.AddOpenTelemetry()
         .AddOtlpExporter(o =>
         {
             o.Endpoint = new Uri(builder.Configuration["OpenTelemetry:OtlpEndpoint"] ?? "http://localhost:4317");
-        }));
+        })
+        .AddConsoleExporter());
 
 var jwtOpts = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
     ?? throw new InvalidOperationException("Jwt section not found in configuration");
