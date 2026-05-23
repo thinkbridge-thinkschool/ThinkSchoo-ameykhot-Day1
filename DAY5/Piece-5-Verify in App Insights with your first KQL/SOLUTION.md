@@ -79,21 +79,27 @@ requests
 | order by p99 desc
 ```
 
-### KQL Results Table
+### KQL Results Table (actual output from App Insights)
 
 | name | count_ | p50 | p99 |
 |---|---|---|---|
-| GET /api/quotes | 6 | 89ms | 327ms |
-| GET /health | 6 | 49ms | 550ms |
-| GET /api/quotes/{id} | 3 | 14ms | 164ms |
+| GET /api/quotes/ | 11 | 3.07ms | 271.90ms |
+| GET /health | 12 | 0.37ms | 181.42ms |
+| GET /api/quotes/{id} | 8 | 2.36ms | 60.21ms |
+| GET / | 2 | 0.28ms | 1.09ms |
+| GET /favicon.ico | 1 | 0.45ms | 0.45ms |
 
-> **Note:** First request latencies are higher (cold start: `GET /health` 550ms, `GET /api/quotes` 327ms) because the container had just scaled up. Warm requests drop to 39–89ms.
+### Screenshots
 
-### Screenshot of KQL Results
+**Results table view:**
 
-![KQL Results in App Insights](screenshots/kql-results.png)
+![KQL Results Table](KQL%20Qury%20Output.png)
 
-> **How to reproduce:** Go to [portal.azure.com](https://portal.azure.com) → Resource group `rg-quotes-amey` → `ai-342m3golxdrt6` (Application Insights) → **Logs** → paste the query above → **Run**
+**Chart view:**
+
+![KQL Results Chart](KQL%20Qury%20Output%202.png)
+
+> App Insights resource: `ai-342m3golxdrt6` | Resource group: `rg-quotes-amey` | Query ran in 3s 922ms | 5 records
 
 ---
 
@@ -114,7 +120,7 @@ EndpointPerformance
 
 ## Observation About Results
 
-**Cold start dominates p99.** The `GET /health` endpoint has a p50 of 49ms but a p99 of 550ms — a 10× gap caused entirely by the container cold start on the first request. Once the container is warm, all endpoints respond in under 170ms. This means p99 is misleading in low-traffic APIs unless you account for scale-from-zero cold starts.
+**p99 is 50–750× higher than p50 across every endpoint.** `GET /api/quotes/` shows p50=3ms but p99=272ms — a 90× gap. `GET /health` shows p50=0.37ms but p99=181ms — a 490× gap. This extreme spread is caused by cold-start latency on scale-from-zero restarts: the first request after the container spins up absorbs the full startup cost, inflating p99 while warm requests stay under 5ms. In a production SLA, this means p99 is a misleading metric for low-traffic Container Apps unless you account for scale-from-zero behavior.
 
 ---
 
