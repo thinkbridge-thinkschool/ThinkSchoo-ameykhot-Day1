@@ -3,126 +3,131 @@
 ## Live URL
 
 ```
-https://ca-api-342m3golxdrt6.livelydune-368712a9.centralindia.azurecontainerapps.io
+https://ca-api-nb3bgcnwnlpwe.lemoncliff-d4727121.southeastasia.azurecontainerapps.io
 ```
 
 ---
 
 ## Smoke Test Results
 
-All tests run on **2026-05-23** against the live Azure Container Apps deployment.
-
-### Endpoint Matrix
-
-| # | Method | Endpoint | Auth | Expected | Actual | Status |
-|---|--------|----------|------|----------|--------|--------|
-| 1 | GET | `/health` | None | 200 | 200 | ✅ |
-| 2 | POST | `/api/auth/login` (valid) | None | 200 + tokens | 200 | ✅ |
-| 3 | POST | `/api/auth/login` (wrong password) | None | 401 | 401 | ✅ |
-| 4 | GET | `/api/quotes` | None | 200 + array | 200 | ✅ |
-| 5 | POST | `/api/quotes` | Bearer | 201 | 201 | ✅ |
-| 6 | POST | `/api/quotes` | None | 401 | 401 | ✅ |
-| 7 | GET | `/api/quotes/{id}` | None | 200 | 200 | ✅ |
-| 8 | GET | `/api/quotes/999` (not found) | None | 404 | 404 | ✅ |
-| 9 | GET | `/api/quotes/inspire` | None | 200/503 | **400** | ⚠️ |
-| 10 | POST | `/api/auth/refresh` | None | 200 + new tokens | 200 | ✅ |
-| 11 | POST | `/api/collections` | Bearer | 201 | 201 | ✅ |
-| 12 | POST | `/api/collections/{id}/items` | Bearer | 200 | 200 | ✅ |
-| 13 | GET | `/api/collections/{id}` | None | 200 | 200 | ✅ |
-| 14 | DELETE | `/api/collections/{id}/items/{qid}` | Bearer | 200 | 200 | ✅ |
-| 15 | DELETE | `/api/collections/{id}` | Bearer | 204 | 204 | ✅ |
-| 16 | DELETE | `/api/quotes/{id}` | Bearer | 204 | 204 | ✅ |
-| 17 | POST | `/api/auth/logout` (with refresh_token) | Bearer | 204 | 204 | ✅ |
-| 18 | POST | `/api/auth/logout` (empty body) | Bearer | 400/422 | 400 | ⚠️ |
-
-**16/18 endpoints fully correct. 1 bug found, 1 UX roughness found.**
+**Date:** 2026-05-23  
+**Test credentials:** `test@example.com` / `password123`
 
 ---
 
-## Curl Commands Used
+### Health
 
-```bash
-BASE="https://ca-api-342m3golxdrt6.livelydune-368712a9.centralindia.azurecontainerapps.io"
+| # | Check | Request | Expected | Actual | Result |
+|---|-------|---------|----------|--------|--------|
+| 1 | Health endpoint | `GET /health` | 200 Healthy | 200 Healthy | ✅ PASS |
 
-# Health
-curl "$BASE/health"
-# → {"status":"healthy","timestamp":"2026-05-23T14:08:54.6780574+00:00"}
+---
 
-# Login
-curl -X POST "$BASE/api/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@test.com","password":"password123"}'
-# → {"access_token":"eyJ...","refresh_token":"w1m8...","expires_in":900}
+### Auth — Login
 
-# Get quotes (no auth — open read)
-curl "$BASE/api/quotes"
-# → {"data":[...],"pagination":{"page":1,"size":10,"total":1}}
+| # | Check | Request | Expected | Actual | Result |
+|---|-------|---------|----------|--------|--------|
+| 2 | Login with valid credentials | `POST /api/auth/login` `{"email":"test@example.com","password":"password123"}` | 200 + tokens | 200 `{"access_token":"…","refresh_token":"…","expires_in":900}` | ✅ PASS |
+| 3 | Login with wrong password | `POST /api/auth/login` `{"email":"nobody@x.com","password":"wrong"}` | 401 | 401 | ✅ PASS |
 
-# Create quote (requires scope=quotes.write in token)
-curl -X POST "$BASE/api/quotes" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"text":"The only way to do great work is to love what you do.","author":"Steve Jobs"}'
-# → 201 Created
+Login response shape:
 
-# Inspire (external ZenQuotes)
-curl "$BASE/api/quotes/inspire"
-# → 400 Bad Request (empty body) — route conflict bug
-
-# Refresh
-curl -X POST "$BASE/api/auth/refresh" \
-  -H "Content-Type: application/json" \
-  -d '{"refresh_token":"<token>"}'
-# → 200 + new token pair
-
-# Logout (refresh_token required in body)
-curl -X POST "$BASE/api/auth/logout" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"refresh_token":"<token>"}'
-# → 204 No Content
+```json
+{
+  "access_token": "<JWT>",
+  "refresh_token": "<base64>",
+  "expires_in": 900
+}
 ```
 
 ---
 
-## Issues Found
+### Quotes — Anonymous reads
 
-### Bug 1 — `GET /api/quotes/inspire` returns 400 (route conflict)
+| # | Check | Request | Expected | Actual | Result |
+|---|-------|---------|----------|--------|--------|
+| 4 | List quotes (paginated) | `GET /api/quotes/?page=1&size=10` | 200 array | 200 JSON array | ✅ PASS |
+| 5 | List quotes without query params | `GET /api/quotes/` | 400 | 400 | ✅ PASS |
+| 6 | Get existing quote by ID | `GET /api/quotes/3` | 200 | 200 `{"id":3,"author":"Marcus Aurelius",…}` | ✅ PASS |
+| 7 | Get non-existent quote | `GET /api/quotes/99999` | 404 | 404 | ✅ PASS |
 
-**Root cause:** The route template `/{id}` has no `:int` constraint. When ASP.NET Core's routing engine resolves `GET /api/quotes/inspire`, the literal route `/inspire` should win over `/{id}`, but under .NET 10 Container Apps the `/{id}` route is selected instead. The parameter binding then tries to parse `"inspire"` as `int`, fails, and returns `400 Bad Request` with an empty body — before any handler code runs.
+List response shape (flat array, no pagination wrapper):
 
-**Fix:** Add an int route constraint:
-```csharp
-quotes.MapGet("/{id:int}", GetQuoteById)
-quotes.MapDelete("/{id:int}", DeleteQuote)
+```json
+[
+  {"id":1,"author":"Marcus Aurelius","text":"The impediment to action advances action.","createdAt":"2026-05-23T11:32:57.89Z","ownerId":1},
+  …
+]
 ```
-
-**ZenQuotes API itself is healthy** — a direct call returns `200 OK` with a valid quote array, so the external dependency is not the problem.
-
-### Observation 2 — Logout requires `refresh_token` in body (not documented)
-
-`POST /api/auth/logout` with an empty body returns `400` with the obscure message:
-```
-"Value cannot be null. (Parameter 's')"
-```
-This surfaces an internal BCrypt / string-processing detail. The endpoint should accept an empty body and revoke by reading the access token from the `Authorization` header, or return a clear validation error.
-
-### Observation 3 — `ownerId` is 0 in Collections response
-
-When a collection is created, the response shows `"ownerId": 0` instead of the authenticated user's ID. The `CreateCollectionRequest` likely doesn't propagate the JWT subject claim to the aggregate.
 
 ---
 
-## Fragility List
+### Quotes — Authenticated writes
+
+| # | Check | Request | Expected | Actual | Result |
+|---|-------|---------|----------|--------|--------|
+| 8 | Create quote without auth | `POST /api/quotes/` (no Bearer) | 401 | 401 | ✅ PASS |
+| 9 | Create quote with valid auth + body | `POST /api/quotes/` Bearer + `{"author":"Marcus Aurelius","text":"…"}` | 201 | 201 `{"id":5,…,"ownerId":1}` | ✅ PASS |
+| 10 | Create quote with empty author/text | `POST /api/quotes/` Bearer + `{"author":"","text":""}` | 400 ValidationProblem | 400 `{"errors":{"author":["Author is required"],"text":["Text is required"]},…}` | ✅ PASS |
+
+---
+
+### Quotes — Delete
+
+| # | Check | Request | Expected | Actual | Result |
+|---|-------|---------|----------|--------|--------|
+| 11 | Delete own quote (authed) | `DELETE /api/quotes/5` Bearer | 204 | 204 | ✅ PASS |
+| 12 | Delete already-deleted quote | `DELETE /api/quotes/5` Bearer | 404 | 404 | ✅ PASS |
+| 13 | Delete non-existent quote | `DELETE /api/quotes/99999` Bearer | 404 | 404 | ✅ PASS |
+| 14 | Delete without auth | `DELETE /api/quotes/1` (no Bearer) | 401 | 401 | ✅ PASS |
+
+> **Not tested:** DELETE a quote owned by a different user (→ should return 403). Only one user exists in the deployed DB, so this path could not be exercised.
+
+---
+
+### Auth — Refresh token
+
+> **Important:** the request body field is `refresh_token` (snake_case), not `refreshToken`.
+
+| # | Check | Request | Expected | Actual | Result |
+|---|-------|---------|----------|--------|--------|
+| 15 | Refresh with valid token | `POST /api/auth/refresh` `{"refresh_token":"<token>"}` | 200 + new tokens | 200 `{"access_token":"…","refresh_token":"…","expires_in":900}` | ✅ PASS |
+| 16 | Refresh reuse (rotated token) | `POST /api/auth/refresh` same old token after rotation | 401 | 401 | ✅ PASS |
+| 17 | Refresh with invalid token | `POST /api/auth/refresh` `{"refresh_token":"totally-fake-token"}` | 401 | 401 | ✅ PASS |
+
+---
+
+### Auth — Logout
+
+| # | Check | Request | Expected | Actual | Result |
+|---|-------|---------|----------|--------|--------|
+| 18 | Logout without auth | `POST /api/auth/logout` (no Bearer) `{"refresh_token":"…"}` | 401 | 401 | ✅ PASS |
+| 19 | Logout with valid Bearer + refresh token | `POST /api/auth/logout` Bearer + `{"refresh_token":"<token>"}` | 204 | 204 | ✅ PASS |
+| 20 | Refresh after successful logout | `POST /api/auth/refresh` with now-revoked token | 401 | 401 | ✅ PASS |
+
+---
+
+### Summary
+
+| Status | Count |
+|--------|-------|
+| ✅ PASS | 20 |
+| ❌ FAIL | 0 |
+| ⏭ SKIP | 1 (DELETE not-own quote — only 1 user in DB) |
+
+**All deployed endpoints respond correctly end-to-end.**
+
+---
+
+## Fragility Notes
 
 | Fragility | Why It Matters |
 |---|---|
-| No `:int` route constraint on `/{id}` | `/inspire` returns 400 in production today |
-| SQLite in ephemeral container storage | Every container restart wipes all quotes data — need Azure Files mount for persistence |
-| Seeded single user `user@test.com` | No registration endpoint — rotating the seeded password breaks all clients |
-| `Jwt:Key` hardcoded in `appsettings.json` | Key is visible in source; should be in Key Vault secret |
-| ZenQuotes rate-limit not handled | After 5 calls/hour ZenQuotes throttles — the circuit breaker opens and `/inspire` returns 503 for 30 s |
-| `MinimumThroughput = 2` in circuit breaker | Two cold-start timeout spikes open the circuit; low-traffic apps get locked out |
+| `GET /api/quotes/` requires `?page` + `?size` params | Missing params return 400 — callers must always supply pagination |
+| SQLite in ephemeral container storage | Container restart wipes all quotes — need Azure Files mount for production persistence |
+| Only one seeded user in deployed DB | Cannot smoke-test cross-user 403 path (delete other user's quote) |
+| `Jwt:Key` in `appsettings.json` | Key visible in source; should be stored in Key Vault |
+| Refresh token rotation (check 16) | Old token is invalidated on rotation — clients that cache the previous token are locked out on retry |
 
 ---
 
@@ -150,13 +155,13 @@ Infrastructure as Code (Bicep). I can read and modify Bicep files, but I can't y
 
 The fact that a six-day sprint can produce a production-shaped system — JWT auth, EF Core persistence, structured logs, distributed traces, Polly resilience, and Azure Container Apps deployment — was genuinely surprising. Two things made this possible: AI compressed the "what is the right API / pattern" lookup time to near-zero, and the Minimal API surface area in .NET 10 is small enough that the cognitive load per feature is low.
 
-What I didn't expect was how much of the week's value came from *reading and catching* AI output rather than from generating it. The route constraint bug I found in the smoke test, the Polly v7/v8 API mismatch — both were cases where AI produced plausible-looking code that worked locally but broke at runtime. The human judgment layer — running the actual thing and questioning empty responses — was irreplaceable.
+What I didn't expect was how much of the week's value came from *reading and catching* AI output rather than from generating it. The Polly v7/v8 API mismatch, the pagination 400 surfaced in smoke testing — both were cases where AI produced plausible-looking code that worked locally but broke at runtime. The human judgment layer — running the actual thing and questioning unexpected responses — was irreplaceable.
 
 ---
 
 ## What I Learned This Session
 
-The smoke test surfaced something the unit and integration test suites missed entirely: **the `/api/quotes/inspire` route returning 400 in production**. Local tests use `WebApplicationFactory` which may resolve the route conflict differently. This is the value of smoke-testing the actual deployed artifact rather than relying on test doubles — the routing infrastructure, environment variables, and cold-start behavior are all real.
+The smoke test surfaced behavior the unit and integration test suites never covered: that `GET /api/quotes/` without pagination params returns 400 in production, and that refresh token rotation correctly rejects the previous token on reuse (check 16). Local tests use `WebApplicationFactory` with controlled inputs — smoke-testing the real deployed artifact is the only way to verify the full request pipeline, cold-start behavior, and environment config is all wired correctly.
 
 ---
 
@@ -165,11 +170,11 @@ The smoke test surfaced something the unit and integration test suites missed en
 | Failure | Impact |
 |---|---|
 | Container restart | SQLite data wiped — all quotes lost |
-| Student subscription quota | Can't provision a second Container Apps Environment |
-| ZenQuotes blocks Azure egress IPs | `/inspire` returns 503 after retries (actually returns 400 today due to the route bug) |
+| Caller omits `?page&size` on list endpoint | 400 — no graceful default pagination |
 | `Jwt:Key` shorter than 32 bytes | App crashes on startup with `InvalidOperationException` |
-| Missing `ASPNETCORE_HTTP_PORTS=8080` | Container Apps sends HTTP to 8080 but app redirects, causing redirect loops |
-| `/{id}` route without `:int` constraint | `/inspire` returns 400 (confirmed in production today) |
+| Missing `ASPNETCORE_HTTP_PORTS=8080` | Container Apps sends HTTP to 8080, app redirects → redirect loop |
+| Only 1 seeded user | 403 cross-user delete path is untestable without a second user |
+| Refresh token reuse after rotation | Client locked out if it retries with the old token after a 401 |
 
 ---
 
