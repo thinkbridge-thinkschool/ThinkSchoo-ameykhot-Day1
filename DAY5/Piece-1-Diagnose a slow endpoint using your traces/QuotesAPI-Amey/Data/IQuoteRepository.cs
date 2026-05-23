@@ -35,24 +35,12 @@ public class QuoteRepository : IQuoteRepository
     {
         _logger.LogInformation("Fetching quotes with page={Page}, size={Size}", page, size);
 
-        // N+1 ANTIPATTERN: load all IDs then query each quote individually.
-        // This is intentionally slow — see Day 5 Piece 1 diagnosis exercise.
-        var allIds = await _context.Quotes
+        var total = await _context.Quotes.CountAsync(cancellationToken);
+        var items = await _context.Quotes
             .OrderByDescending(q => q.CreatedAt)
-            .Select(q => q.Id)
+            .Skip((page - 1) * size)
+            .Take(size)
             .ToListAsync(cancellationToken);
-
-        var total = allIds.Count;
-        var pageIds = allIds.Skip((page - 1) * size).Take(size).ToList();
-
-        var items = new List<Quote>();
-        foreach (var id in pageIds)
-        {
-            var quote = await _context.Quotes
-                .FirstOrDefaultAsync(q => q.Id == id, cancellationToken);
-            if (quote is not null)
-                items.Add(quote);
-        }
 
         return new PaginatedResult<Quote>
         {

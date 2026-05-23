@@ -193,10 +193,6 @@ public static class EndpointExtensions
                 Detail = "Page and size must be greater than 0"
             });
 
-        // INTENTIONAL SLOW OPERATION — Day 5 Piece 1 trace diagnosis exercise.
-        // Simulates a blocking downstream call that inflates the span duration.
-        Thread.Sleep(1500);
-
         logger.LogInformation("Fetching quotes page {Page} size {Size}", page, size);
         var result = await repository.GetQuotesAsync(page, size, cancellationToken);
         logger.LogInformation("Returned {Count} of {Total} quotes", result.Items.Count(), result.Total);
