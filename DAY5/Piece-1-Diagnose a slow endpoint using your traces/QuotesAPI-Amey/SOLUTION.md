@@ -43,6 +43,19 @@ foreach (var id in pageIds)
 
 ---
 
+## Jaeger UI — Screenshots
+
+### Jaeger Dashboard (service list)
+![Jaeger UI](../jagger%20Ui.png)
+
+### BEFORE — Slow Trace (~1.5–2.4 s per request)
+![Before slow trace](../Before%20-slow%20trace.png)
+
+### AFTER — Fast Trace (~7–17 ms per request)
+![After fast trace](../After%20-fast%20trace.png)
+
+---
+
 ## Step 2 — BEFORE Trace (OpenTelemetry Console Exporter — Real Output)
 
 App was run with `OpenTelemetry.Exporter.Console` added to the tracing pipeline.  
