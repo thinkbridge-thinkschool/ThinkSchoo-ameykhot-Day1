@@ -1,6 +1,79 @@
 # QuotesAPI - ASP.NET Core 10 Minimal API
 
-A modern ASP.NET Core 10 API for managing quotes and collections, built with **Domain-Driven Design (DDD)** principles, **Entity Framework Core**, and **FluentValidation**.
+A modern ASP.NET Core 10 API for managing quotes and collections, built with **Domain-Driven Design (DDD)** principles, **Entity Framework Core**, **FluentValidation**, and full **OpenTelemetry** observability.
+
+---
+
+## Day 5 – Piece 1: Diagnose a Slow Endpoint Using Your Traces
+
+Proved the observability pipeline works end-to-end by deliberately breaking `GET /api/quotes` and diagnosing the problem from the Jaeger trace.
+
+### What was changed
+
+| File | Change |
+|------|--------|
+| `Extensions/ServiceCollectionExtensions.cs` | Added `Thread.Sleep(1500)` in the `GetQuotes` handler (BEFORE), then removed it (AFTER) |
+| `Data/IQuoteRepository.cs` | Replaced efficient `Skip/Take` query with an N+1 loop (BEFORE), then restored the single paginated query (AFTER) |
+| `SOLUTION.md` | Full diagnosis write-up: before/after trace descriptions, 100-word diagnosis note, fix explanation, and App Insights KQL queries |
+
+### The two problems introduced
+
+**1. Thread.Sleep(1500) — blocking sleep on the thread-pool thread**
+
+```csharp
+// BEFORE — blocks the thread pool thread for 1.5 s with no async yield
+Thread.Sleep(1500);
+```
+
+Visible in Jaeger as a ~1500 ms gap in the root span with **no child spans** — wall-clock time that is unaccounted for.
+
+**2. N+1 query — one SELECT per quote instead of one paginated SELECT**
+
+```csharp
+// BEFORE — fires N individual SELECTs for a page of N quotes
+var allIds = await _context.Quotes.Select(q => q.Id).ToListAsync();
+foreach (var id in pageIds)
+    items.Add(await _context.Quotes.FirstOrDefaultAsync(q => q.Id == id));
+```
+
+Visible in Jaeger as N+1 EF Core child spans (11 spans for a 10-item page).
+
+### Before vs After (trace comparison)
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Span duration | ~1552 ms | ~5 ms |
+| EF Core child spans | N+1 (11 for page of 10) | 2 (COUNT + SELECT) |
+| Thread blocked | Yes (1.5 s) | No |
+
+### Diagnosis note
+
+> The slow span was `GET /api/quotes` (~1552 ms) because of two stacked problems. First, `Thread.Sleep(1500)` blocked a thread-pool thread — visible in Jaeger as a 1.5 s gap with no child span. Second, an N+1 query fired one `SELECT … WHERE Id = ?` per quote, producing 11 EF spans for a 10-item page. Fixed by removing the sleep and replacing the per-ID loop with `.Skip().Take().ToListAsync()`, collapsing 11 EF spans into 2 and dropping response time to ~5 ms.
+
+### Bonus: KQL queries for App Insights
+
+Find all endpoints slower than 1 second:
+
+```kusto
+requests
+| where timestamp > ago(1h)
+| where duration > 1000
+| project timestamp, name, duration, resultCode, operation_Id
+| order by duration desc
+```
+
+Detect N+1 by counting DB calls per request:
+
+```kusto
+dependencies
+| where timestamp > ago(1h)
+| summarize queryCount = count() by operation_Id
+| where queryCount > 5
+| join kind=inner (requests | project operation_Id, name, duration) on operation_Id
+| order by queryCount desc
+```
+
+See [SOLUTION.md](SOLUTION.md) for the full diagnosis, trace screenshots, fix walkthrough, and KQL alert rules.
 
 ---
 
