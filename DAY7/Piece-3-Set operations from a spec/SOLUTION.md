@@ -74,6 +74,8 @@ GO
 
 ### Result
 
+![Question 1 - EXCEPT output](question1-results.png)
+
 ```
 Name
 --------
@@ -117,6 +119,8 @@ GO
 
 ### Result
 
+![Question 2 - INTERSECT output](question2-results.png)
+
 ```
 Name
 --------
@@ -153,6 +157,8 @@ GO
 ```
 
 ### Result
+
+![Question 3 - UNION output](question3-results.png)
 
 ```
 Name         Category
@@ -204,6 +210,12 @@ wisdom       classic
 - **Column count mismatch** — Adding an extra column to one side of a UNION/INTERSECT/EXCEPT causes a compile error.
 - **Data type mismatch** — Mixing `INT` and `NVARCHAR` across the two SELECT sides causes an implicit conversion error or failure.
 - **Circular foreign keys** — If QuoteTags referenced a non-existent QuoteId or TagId, the FK constraint would reject the insert.
+
+---
+
+## Azure Portal — Database Overview
+
+![Azure Portal - thinkschool-quotesdb-amey](azure-portal-db.png)
 
 ---
 
