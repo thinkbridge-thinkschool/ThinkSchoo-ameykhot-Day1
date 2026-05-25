@@ -76,6 +76,10 @@ GO
 
 ![Question 1 - EXCEPT output](question1-results.png)
 
+**Azure Portal — Query Editor (live run):**
+
+![Question 1 - EXCEPT on Azure Portal](portal-q1-except.png)
+
 ```
 Name
 --------
@@ -129,6 +133,10 @@ GO
 
 ![Question 2 - INTERSECT output](question2-results.png)
 
+**Azure Portal — Query Editor (live run):**
+
+![Question 2 - INTERSECT on Azure Portal](portal-q2-intersect.png)
+
 ```
 Name
 --------
@@ -175,6 +183,10 @@ GO
 ### Result
 
 ![Question 3 - UNION output](question3-results.png)
+
+**Azure Portal — Query Editor (live run):**
+
+![Question 3 - UNION on Azure Portal](portal-q3-union.png)
 
 ```
 Name         Category
