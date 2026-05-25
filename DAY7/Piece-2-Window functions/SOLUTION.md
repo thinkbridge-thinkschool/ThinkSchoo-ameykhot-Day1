@@ -77,7 +77,7 @@ Seneca           | It is not that I am so smart, it is just that I stay with pro
 ![Query Output](queryOutputCmd.png)
 
 ### Azure Portal — Database Overview
-![Azure Portal](AzurePortal.png)
+![Azure Portal](AzurePorta.png)
 
 ---
 
