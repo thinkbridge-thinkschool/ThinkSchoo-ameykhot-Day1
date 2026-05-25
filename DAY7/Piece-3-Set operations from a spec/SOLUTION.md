@@ -90,6 +90,14 @@ Epictetus
 - Second set: authors whose quotes are tagged → Marcus Aurelius, Seneca  
 - `EXCEPT` subtracts: only **Epictetus** remains — he has 3 quotes but none are tagged.
 
+### Why this operator? Advantages?
+| Point | Detail |
+|-------|--------|
+| **Why EXCEPT** | We need a "difference" — things that exist in A but are missing from B. A WHERE NOT EXISTS or LEFT JOIN + IS NULL would work too, but EXCEPT is cleaner and reads like plain English. |
+| **Advantage** | No need to write a subquery or NULL check. SQL Server handles the deduplication automatically. |
+| **Real-world use** | Find customers who signed up but never placed an order. Find employees with no performance review. Any "missing relationship" problem. |
+| **Watch out** | Column count and types on both sides must match. EXCEPT removes duplicates — use EXCEPT ALL if you want to keep them. |
+
 ---
 
 ## Question 2 — Authors appearing in BOTH classic and modern tag categories
@@ -134,6 +142,14 @@ Marcus Aurelius
 - Classic authors: Marcus Aurelius (quotes tagged wisdom, stoicism, philosophy)  
 - Modern authors: Marcus Aurelius (quote tagged modern), Seneca (quote tagged motivation)  
 - `INTERSECT` keeps only the overlap: **Marcus Aurelius** — the only author bridging both worlds.
+
+### Why this operator? Advantages?
+| Point | Detail |
+|-------|--------|
+| **Why INTERSECT** | We need authors who satisfy TWO independent conditions at the same time — classic AND modern. A single WHERE with OR wouldn't work; we need both memberships confirmed separately. |
+| **Advantage** | Each SELECT can be a completely independent query with its own joins and filters. INTERSECT finds the overlap without writing a complex JOIN across both conditions. |
+| **Real-world use** | Find products sold in both Q1 and Q2. Find users active on both web and mobile. Any "appears in both groups" problem. |
+| **Watch out** | If even one condition never matches, the result is empty. INTERSECT is an AND between sets, so it can easily return zero rows. |
 
 ---
 
@@ -180,6 +196,14 @@ wisdom       classic
 - Modern tags: modern, motivation, mindset (3 rows)  
 - `UNION` merges them into **7 distinct rows**, sorted automatically by SQL Server.  
 - Use `UNION ALL` if you want duplicates included; plain `UNION` deduplicates.
+
+### Why this operator? Advantages?
+| Point | Detail |
+|-------|--------|
+| **Why UNION** | We want one combined list from two separate groups. A single `WHERE Category IN ('classic','modern')` also works here, but UNION shines when the two SELECTs come from different tables or have different structures. |
+| **Advantage** | Merges results from completely different queries or even different tables into one clean output. Duplicates are removed automatically — no need for DISTINCT. |
+| **Real-world use** | Combine a list of current customers and past customers. Merge error logs from two different systems. Any "all of A plus all of B" problem. |
+| **Watch out** | UNION is slower than UNION ALL because it sorts and deduplicates. If you know there are no duplicates, use UNION ALL for better performance. |
 
 ---
 
