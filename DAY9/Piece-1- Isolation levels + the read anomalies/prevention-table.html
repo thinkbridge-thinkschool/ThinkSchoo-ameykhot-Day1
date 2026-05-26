@@ -1,0 +1,117 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Azure SQL - Isolation Level Prevention Table</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',sans-serif;}
+body{background:#f3f2f1;}
+.azure-bar{background:#0078D4;color:#fff;padding:8px 16px;display:flex;align-items:center;font-size:14px;gap:12px;}
+.azure-logo{font-weight:700;font-size:16px;letter-spacing:1px;}
+.breadcrumb{background:#323130;color:#a0a0a0;padding:5px 16px;font-size:12px;}
+.breadcrumb span{color:#fff;}
+.content{padding:20px;}
+h2{color:#323130;margin-bottom:16px;font-size:20px;}
+.main-table{width:100%;border-collapse:collapse;background:white;box-shadow:0 2px 8px rgba(0,0,0,0.12);border-radius:6px;overflow:hidden;margin-bottom:24px;}
+.main-table thead th{background:#0078D4;color:white;padding:12px 16px;text-align:left;font-size:13px;}
+.main-table tbody td{padding:12px 16px;border-bottom:1px solid #edebe9;font-size:13px;}
+.main-table tbody tr:last-child td{border-bottom:none;}
+.main-table tbody tr:hover{background:#f3f2f1;}
+.pill{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;}
+.pill-red{background:#FDE7E9;color:#A80000;}
+.pill-green{background:#DFF6DD;color:#107C10;}
+.matrix{width:100%;border-collapse:collapse;background:white;box-shadow:0 2px 8px rgba(0,0,0,0.12);border-radius:6px;overflow:hidden;}
+.matrix th{background:#605E5C;color:white;padding:10px 16px;text-align:center;font-size:12px;}
+.matrix th:first-child{text-align:left;}
+.matrix td{padding:10px 16px;border:1px solid #edebe9;text-align:center;font-size:13px;}
+.matrix td:first-child{text-align:left;font-weight:600;background:#faf9f8;}
+.x-mark{color:#A80000;font-size:16px;}
+.check-mark{color:#107C10;font-size:16px;font-weight:bold;}
+.level-tag{font-family:Consolas,monospace;font-size:12px;background:#f3f2f1;padding:2px 6px;border-radius:3px;color:#0078D4;}
+</style>
+</head>
+<body>
+<div class="azure-bar">
+  <div class="azure-logo">&#x2740; Microsoft Azure</div>
+  <div style="font-size:12px;opacity:0.8;">SQL databases &gt; thinkschool-quotesdb-amey &gt; Query editor</div>
+</div>
+<div class="breadcrumb">thinkschool-sql-amey.database.windows.net &nbsp;|&nbsp; <span>thinkschool-quotesdb-amey</span> &nbsp;|&nbsp; <span>Isolation Level Prevention Summary</span></div>
+<div class="content">
+  <h2>Prevention Table — Which Isolation Level Fixes Each Anomaly</h2>
+
+  <table class="main-table">
+    <thead>
+      <tr>
+        <th>Anomaly</th>
+        <th>What Happens</th>
+        <th>Lowest Level That Prevents It</th>
+        <th>How It Works</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Dirty Read</strong></td>
+        <td>Session 2 reads data Session 1 changed but NOT yet committed</td>
+        <td><span class="level-tag">READ COMMITTED</span></td>
+        <td>Blocks reads on rows with open write locks — waits until writer commits or rolls back</td>
+      </tr>
+      <tr>
+        <td><strong>Non-Repeatable Read</strong></td>
+        <td>Session 2 reads same row twice, gets different values</td>
+        <td><span class="level-tag">REPEATABLE READ</span></td>
+        <td>Holds shared locks on read rows until transaction ends — other sessions cannot UPDATE those rows</td>
+      </tr>
+      <tr>
+        <td><strong>Phantom Read</strong></td>
+        <td>Session 2 runs same range query twice, gets different row count</td>
+        <td><span class="level-tag">SERIALIZABLE</span></td>
+        <td>Holds key-range locks on the search predicate — other sessions cannot INSERT rows that match the range</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 style="margin-bottom:16px;">Isolation Level Matrix — Anomaly Allowed / Prevented</h2>
+  <table class="matrix">
+    <thead>
+      <tr>
+        <th>Isolation Level</th>
+        <th>Dirty Read</th>
+        <th>Non-Repeatable Read</th>
+        <th>Phantom Read</th>
+        <th>Concurrency</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>READ UNCOMMITTED</td>
+        <td><span class="x-mark">&#x2717; Possible</span></td>
+        <td><span class="x-mark">&#x2717; Possible</span></td>
+        <td><span class="x-mark">&#x2717; Possible</span></td>
+        <td><span class="pill pill-green">Highest</span></td>
+      </tr>
+      <tr style="background:#f0f9f0;">
+        <td>READ COMMITTED <em style="font-size:11px;">(SQL Server default)</em></td>
+        <td><span class="check-mark">&#x2714; Prevented</span></td>
+        <td><span class="x-mark">&#x2717; Possible</span></td>
+        <td><span class="x-mark">&#x2717; Possible</span></td>
+        <td><span class="pill pill-green">High</span></td>
+      </tr>
+      <tr style="background:#f0f9f0;">
+        <td>REPEATABLE READ</td>
+        <td><span class="check-mark">&#x2714; Prevented</span></td>
+        <td><span class="check-mark">&#x2714; Prevented</span></td>
+        <td><span class="x-mark">&#x2717; Possible</span></td>
+        <td><span class="pill" style="background:#FFF4CE;color:#5C4B00;">Medium</span></td>
+      </tr>
+      <tr style="background:#f0f9f0;">
+        <td>SERIALIZABLE</td>
+        <td><span class="check-mark">&#x2714; Prevented</span></td>
+        <td><span class="check-mark">&#x2714; Prevented</span></td>
+        <td><span class="check-mark">&#x2714; Prevented</span></td>
+        <td><span class="pill pill-red">Lowest</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+</body>
+</html>
