@@ -1,5 +1,12 @@
 # Day 8 — Piece 2: Covering Indexes + Included Columns
 
+## GitHub Link
+
+**Repo:** [thinkbridge-thinkschool/ThinkSchoo-ameykhot-Day1](https://github.com/thinkbridge-thinkschool/ThinkSchoo-ameykhot-Day1)
+**Folder:** [DAY8/Piece-2-Covering indexes + included columns](https://github.com/thinkbridge-thinkschool/ThinkSchoo-ameykhot-Day1/tree/main/DAY8/Piece-2-Covering%20indexes%20%2B%20included%20columns)
+
+---
+
 ## Environment
 
 | Item | Value |
