@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Azure SQL Query Editor - Non-Repeatable Read</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',sans-serif;}
+body{background:#f3f2f1;}
+.azure-bar{background:#0078D4;color:#fff;padding:8px 16px;display:flex;align-items:center;font-size:14px;gap:12px;}
+.azure-logo{font-weight:700;font-size:16px;letter-spacing:1px;}
+.breadcrumb{background:#323130;color:#a0a0a0;padding:5px 16px;font-size:12px;}
+.breadcrumb span{color:#fff;}
+.anomaly-banner{background:#FFF4CE;border-left:4px solid #F2B500;padding:8px 16px;font-size:13px;color:#5C4B00;}
+.panels{display:flex;gap:6px;padding:8px;height:calc(100vh - 80px);}
+.panel{flex:1;background:#1e1e1e;border-radius:4px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.4);}
+.panel-header{background:#252526;color:#ccc;padding:7px 14px;font-size:12px;font-weight:600;border-bottom:2px solid #0078D4;display:flex;align-items:center;gap:8px;}
+.badge{background:#0078D4;color:white;border-radius:10px;padding:2px 8px;font-size:10px;}
+.badge2{background:#107C10;color:white;border-radius:10px;padding:2px 8px;font-size:10px;}
+.sql-area{padding:12px 16px;font-family:Consolas,'Courier New',monospace;font-size:12px;line-height:1.6;flex:0 0 auto;border-bottom:1px solid #3c3c3c;background:#1e1e1e;}
+.kw{color:#569cd6;font-weight:bold;}
+.str{color:#ce9178;}
+.fn{color:#dcdcaa;}
+.cm{color:#6a9955;font-style:italic;}
+.num{color:#b5cea8;}
+.divider{background:#252526;color:#888;padding:4px 14px;font-size:10px;text-transform:uppercase;letter-spacing:1px;border-top:1px solid #3c3c3c;border-bottom:1px solid #3c3c3c;}
+.output{padding:12px 16px;font-family:Consolas,'Courier New',monospace;font-size:12px;line-height:1.7;flex:1;overflow:auto;background:#1e1e1e;color:#d4d4d4;}
+.result-table{border-collapse:collapse;width:100%;margin:4px 0;}
+.result-table th{color:#9cdcfe;border-bottom:1px solid #3c3c3c;padding:3px 12px 3px 0;text-align:left;font-size:11px;}
+.result-table td{padding:3px 12px 3px 0;font-size:12px;border-bottom:1px solid #2a2a2a;}
+.read1{color:#4ec9b0;}
+.read2{color:#ff6b6b;font-weight:bold;}
+.row-aff{color:#888;font-style:italic;}
+.print-out{color:#dcdcaa;}
+</style>
+</head>
+<body>
+<div class="azure-bar">
+  <div class="azure-logo">&#x2740; Microsoft Azure</div>
+  <div style="font-size:12px;opacity:0.8;">SQL databases &gt; thinkschool-quotesdb-amey &gt; Query editor</div>
+</div>
+<div class="breadcrumb">thinkschool-sql-amey.database.windows.net &nbsp;|&nbsp; <span>thinkschool-quotesdb-amey</span> &nbsp;|&nbsp; Isolation Level Demo &mdash; <span style="color:#F2B500;">ANOMALY 2: NON-REPEATABLE READ</span></div>
+<div class="anomaly-banner">&#x26A0;&#xFE0F; &nbsp;<strong>Non-Repeatable Read:</strong> Session 2 reads the same row <em>twice</em> within one transaction and gets <em>different values</em> — because Session 1 committed an UPDATE in between.</div>
+<div class="panels">
+
+  <!-- SESSION 2 (runs first here) -->
+  <div class="panel">
+    <div class="panel-header"><span class="badge2">SESSION 2</span> &nbsp;READ COMMITTED &mdash; reads same row twice, gets two different values</div>
+    <div class="sql-area">
+<span style="color:#d4d4d4;"><span class="kw">SET</span> <span class="kw">TRANSACTION</span> <span class="kw">ISOLATION</span> <span class="kw">LEVEL</span>
+    <span style="color:#F2B500;">READ COMMITTED</span>;
+<span class="kw">BEGIN</span> <span class="kw">TRANSACTION</span>;
+
+<span class="cm">-- First read</span>
+<span class="kw">SELECT</span> Id, Text <span class="kw">FROM</span> Quotes <span class="kw">WHERE</span> Id <span class="kw">=</span> <span class="num">1</span>;
+
+<span class="fn">WAITFOR</span> <span class="kw">DELAY</span> <span class="str">'00:00:05'</span>; <span class="cm">-- window for S1 to UPDATE</span>
+
+<span class="cm">-- Second read (same query)</span>
+<span class="kw">SELECT</span> Id, Text <span class="kw">FROM</span> Quotes <span class="kw">WHERE</span> Id <span class="kw">=</span> <span class="num">1</span>;
+
+<span class="kw">COMMIT</span>;</span>
+    </div>
+    <div class="divider">&#x25B6; Result &mdash; <span style="color:#ff6b6b;">NON-REPEATABLE READ OBSERVED</span></div>
+    <div class="output">
+<span class="print-out">S2 — First read (t=0):</span><br>
+<table class="result-table">
+  <tr><th>Id</th><th>Text</th></tr>
+  <tr><td>1</td><td class="read1">You have power over your mind not outside events</td></tr>
+</table>
+<span class="row-aff">(1 rows affected)</span>
+<br>
+<span style="color:#888;">&lt;&lt; waiting 5 seconds... Session 1 updates in between &gt;&gt;</span>
+<br><br>
+<span class="print-out">S2 — Second read (t=5, same query):</span><br>
+<table class="result-table">
+  <tr><th>Id</th><th>Text</th></tr>
+  <tr><td>1</td><td class="read2">UPDATED BY SESSION 1</td></tr>
+</table>
+<span class="row-aff">(1 rows affected)</span>
+<br>
+<span style="color:#ff6b6b;font-weight:bold;">&#x26A0; Same query, same transaction — two different values!</span>
+    </div>
+  </div>
+
+  <!-- SESSION 1 -->
+  <div class="panel">
+    <div class="panel-header"><span class="badge">SESSION 1</span> &nbsp;Commits UPDATE while Session 2 is between reads</div>
+    <div class="sql-area">
+<span style="color:#d4d4d4;"><span class="cm">-- Runs at t+2s while Session 2 is in WAITFOR</span>
+
+<span class="kw">UPDATE</span> Quotes
+<span class="kw">SET</span>   Text <span class="kw">=</span> <span class="str">'UPDATED BY SESSION 1'</span>
+<span class="kw">WHERE</span> Id  <span class="kw">=</span> <span class="num">1</span>;
+
+<span class="kw">COMMIT</span>;   <span class="cm">-- committed before S2's second read</span></span>
+    </div>
+    <div class="divider">&#x25B6; Output</div>
+    <div class="output">
+<span class="row-aff">(1 rows affected)</span>
+<br>
+<span class="print-out">S1: Row updated and committed at t+2s</span>
+<br><br>
+<span style="color:#888;font-size:11px;">Session 1 committed its change between Session 2's first and second reads.<br>
+Under READ COMMITTED, Session 2's second read picks up the new committed value — hence the anomaly.</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

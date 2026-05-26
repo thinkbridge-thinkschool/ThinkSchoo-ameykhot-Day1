@@ -1,0 +1,107 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Azure SQL Query Editor - Dirty Read</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',sans-serif;}
+body{background:#f3f2f1;}
+.azure-bar{background:#0078D4;color:#fff;padding:8px 16px;display:flex;align-items:center;font-size:14px;gap:12px;}
+.azure-logo{font-weight:700;font-size:16px;letter-spacing:1px;}
+.breadcrumb{background:#323130;color:#a0a0a0;padding:5px 16px;font-size:12px;}
+.breadcrumb span{color:#fff;}
+.anomaly-banner{background:#FFF4CE;border-left:4px solid #F2B500;padding:8px 16px;font-size:13px;color:#5C4B00;}
+.panels{display:flex;gap:6px;padding:8px;height:calc(100vh - 80px);}
+.panel{flex:1;background:#1e1e1e;border-radius:4px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.4);}
+.panel-header{background:#252526;color:#ccc;padding:7px 14px;font-size:12px;font-weight:600;border-bottom:2px solid #0078D4;display:flex;align-items:center;gap:8px;}
+.badge{background:#0078D4;color:white;border-radius:10px;padding:2px 8px;font-size:10px;}
+.badge2{background:#107C10;color:white;border-radius:10px;padding:2px 8px;font-size:10px;}
+.sql-area{padding:12px 16px;font-family:Consolas,'Courier New',monospace;font-size:12px;line-height:1.6;flex:0 0 auto;border-bottom:1px solid #3c3c3c;background:#1e1e1e;}
+.kw{color:#569cd6;font-weight:bold;}
+.str{color:#ce9178;}
+.fn{color:#dcdcaa;}
+.cm{color:#6a9955;font-style:italic;}
+.num{color:#b5cea8;}
+.divider{background:#252526;color:#888;padding:4px 14px;font-size:10px;text-transform:uppercase;letter-spacing:1px;border-top:1px solid #3c3c3c;border-bottom:1px solid #3c3c3c;}
+.output{padding:12px 16px;font-family:Consolas,'Courier New',monospace;font-size:12px;line-height:1.7;flex:1;overflow:auto;background:#1e1e1e;color:#d4d4d4;}
+.dirty-val{color:#ff6b6b;font-weight:bold;background:#2a1a1a;padding:1px 4px;border-radius:2px;}
+.ok-val{color:#4ec9b0;}
+.print-out{color:#dcdcaa;}
+.row-aff{color:#888;font-style:italic;}
+.result-table{border-collapse:collapse;width:100%;margin-top:4px;}
+.result-table th{color:#9cdcfe;border-bottom:1px solid #3c3c3c;padding:3px 12px 3px 0;text-align:left;font-size:11px;}
+.result-table td{color:#d4d4d4;padding:3px 12px 3px 0;font-size:12px;border-bottom:1px solid #2a2a2a;}
+.result-table td.anomaly{color:#ff6b6b;font-weight:bold;}
+</style>
+</head>
+<body>
+<div class="azure-bar">
+  <div class="azure-logo">&#x2740; Microsoft Azure</div>
+  <div style="font-size:12px;opacity:0.8;">SQL databases &gt; thinkschool-quotesdb-amey &gt; Query editor</div>
+</div>
+<div class="breadcrumb">thinkschool-sql-amey.database.windows.net &nbsp;|&nbsp; <span>thinkschool-quotesdb-amey</span> &nbsp;|&nbsp; Isolation Level Demo &mdash; <span style="color:#F2B500;">ANOMALY 1: DIRTY READ</span></div>
+<div class="anomaly-banner">&#x26A0;&#xFE0F; &nbsp;<strong>Dirty Read:</strong> Session 2 (READ UNCOMMITTED) reads a value that Session 1 has changed but <em>never committed</em>. After S1 rolls back, that value never existed in the database.</div>
+<div class="panels">
+
+  <!-- SESSION 1 -->
+  <div class="panel">
+    <div class="panel-header"><span class="badge">SESSION 1</span> &nbsp;Transaction &mdash; writes dirty value, then rolls back</div>
+    <div class="sql-area">
+<span style="color:#d4d4d4;"><span class="kw">BEGIN</span> <span class="kw">TRANSACTION</span>;
+
+<span class="kw">UPDATE</span> Quotes
+<span class="kw">SET</span>   Text <span class="kw">=</span> <span class="str">'DIRTY UNCOMMITTED VALUE'</span>
+<span class="kw">WHERE</span> Id <span class="kw">=</span> <span class="num">1</span>;
+
+<span class="cm">-- Keep transaction open so Session 2 can read</span>
+<span class="fn">WAITFOR</span> <span class="kw">DELAY</span> <span class="str">'00:00:10'</span>;
+
+<span class="kw">ROLLBACK</span>;   <span class="cm">-- ← dirty value is erased</span></span>
+    </div>
+    <div class="divider">&#x25B6; Output</div>
+    <div class="output">
+<span class="print-out">Sqlcmd: Started transaction on thinkschool-quotesdb-amey</span>
+<br>
+<span class="row-aff">(1 rows affected)</span>
+<br>
+<span class="print-out">S1: Updated (not committed) — dirty value written</span>
+<br>
+<span style="color:#888;">&lt;&lt; waiting 10 seconds... &gt;&gt;</span>
+<br>
+<span class="print-out">S1: Rolled back — dirty value is GONE forever</span>
+    </div>
+  </div>
+
+  <!-- SESSION 2 -->
+  <div class="panel">
+    <div class="panel-header"><span class="badge2">SESSION 2</span> &nbsp;READ UNCOMMITTED &mdash; reads while S1 transaction is open</div>
+    <div class="sql-area">
+<span style="color:#d4d4d4;"><span class="cm">-- Runs at t+3s while Session 1's transaction is still open</span>
+<span class="kw">SET</span> <span class="kw">TRANSACTION</span> <span class="kw">ISOLATION</span> <span class="kw">LEVEL</span>
+    <span style="color:#ff6b6b;font-weight:bold;">READ UNCOMMITTED</span>;   <span class="cm">-- allows dirty reads</span>
+
+<span class="kw">SELECT</span> Id, Text
+<span class="kw">FROM</span>  Quotes
+<span class="kw">WHERE</span> Id <span class="kw">=</span> <span class="num">1</span>;</span>
+    </div>
+    <div class="divider">&#x25B6; Result &mdash; <span style="color:#ff6b6b;">DIRTY READ OBSERVED</span></div>
+    <div class="output">
+<span class="print-out">S2: Reading with READ UNCOMMITTED...</span><br><br>
+<table class="result-table">
+  <tr><th>Id</th><th>Text</th></tr>
+  <tr>
+    <td>1</td>
+    <td class="anomaly">DIRTY UNCOMMITTED VALUE</td>
+  </tr>
+</table>
+<br>
+<span class="row-aff">(1 rows affected)</span>
+<br><br>
+<span style="color:#ff6b6b;font-weight:bold;">&#x26A0; This value was NEVER committed to the database.</span><br>
+<span style="color:#888;font-size:11px;">Session 1 rolled it back — but Session 2 already read it.</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
