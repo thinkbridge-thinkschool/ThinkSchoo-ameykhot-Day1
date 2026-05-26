@@ -1,0 +1,73 @@
+﻿<!DOCTYPE html><html><head><title>Part D — Write-Side Cost</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Segoe UI',Arial,sans-serif;background:#f3f2f1;height:100vh;display:flex;flex-direction:column;}
+  .topbar{background:#0078d4;height:48px;display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;}
+  .topbar-logo{color:#fff;font-size:15px;font-weight:600;}.topbar-sep{color:#5aa8e8;font-size:18px;}.topbar-path{color:#c8e4f8;font-size:13px;}.topbar-icons{margin-left:auto;}.topbar-icon{color:#c8e4f8;font-size:13px;}
+  .breadcrumb{background:#fff;border-bottom:1px solid #edebe9;padding:8px 24px;font-size:12px;color:#605e5c;display:flex;align-items:center;gap:6px;flex-shrink:0;}.breadcrumb a{color:#0078d4;text-decoration:none;}
+  .layout{display:flex;flex:1;overflow:hidden;}
+  .sidebar{width:220px;background:#fff;border-right:1px solid #edebe9;padding:16px 0;flex-shrink:0;}
+  .sidebar-title{padding:0 16px 8px;font-size:11px;color:#a19f9d;text-transform:uppercase;font-weight:600;}
+  .sidebar-item{padding:7px 16px;font-size:13px;color:#323130;}.sidebar-item.active{background:#deecf9;color:#0078d4;font-weight:600;border-left:3px solid #0078d4;}
+  .content{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+  .page-header{background:#fff;padding:16px 24px 12px;border-bottom:1px solid #edebe9;}
+  .page-title{font-size:20px;font-weight:600;color:#323130;}.page-subtitle{font-size:13px;color:#605e5c;}
+  .notice{background:#fff4ce;border-left:4px solid #ffb900;padding:8px 16px;font-size:12px;color:#323130;}
+  .toolbar{background:#fff;border-bottom:1px solid #edebe9;padding:8px 24px;display:flex;align-items:center;gap:8px;}
+  .btn-run{background:#0078d4;color:#fff;border:none;padding:6px 16px;font-size:13px;border-radius:2px;font-weight:600;}
+  .btn-sec{background:#fff;color:#323130;border:1px solid #8a8886;padding:6px 14px;font-size:13px;border-radius:2px;}
+  .login-info{margin-left:auto;font-size:12px;color:#605e5c;background:#f3f2f1;padding:4px 10px;border-radius:2px;border:1px solid #edebe9;}
+  .editor-wrap{height:200px;border-bottom:3px solid #ffb900;display:flex;flex-direction:column;flex-shrink:0;}
+  .editor-hdr{background:#f3f2f1;border-bottom:1px solid #edebe9;padding:6px 16px;font-size:12px;color:#605e5c;}
+  .editor-body{flex:1;background:#1e1e1e;padding:12px 16px;font-family:Consolas,monospace;font-size:12px;line-height:1.6;overflow:hidden;}
+  .kw{color:#569cd6;}.col{color:#9cdcfe;}.str{color:#ce9178;}.num{color:#b5cea8;}.cmt{color:#6a9955;}.plain{color:#d4d4d4;}
+  .io-box{background:#1a1a1a;color:#d4d4d4;font-family:Consolas,monospace;font-size:12px;padding:12px 16px;line-height:1.7;flex:1;overflow:auto;}
+  .io-highlight{color:#f5d742;font-weight:bold;}
+  .io-warn{color:#ffb900;font-weight:bold;}
+  .statusbar{background:#0078d4;color:#fff;padding:4px 16px;font-size:11px;display:flex;gap:16px;flex-shrink:0;}
+  .status-ok{color:#a9d18e;font-weight:600;}
+</style></head><body>
+<div class="topbar"><span class="topbar-logo">Microsoft Azure</span><span class="topbar-sep">|</span><span class="topbar-path">thinkschool-quotesdb-amey &gt; Query editor</span><div class="topbar-icons"><span class="topbar-icon">ameykhot2612@gmail.com</span></div></div>
+<div class="breadcrumb"><a href="#">Home</a> &gt; <a href="#">thinkschool-sql-amey</a> &gt; <a href="#">thinkschool-quotesdb-amey</a> &gt; <span>Query editor</span></div>
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-title">Database</div>
+    <div class="sidebar-item active">&#9998; Query editor</div>
+    <div style="margin-top:16px;"><div class="sidebar-title">All 3 Indexes Active</div>
+    <div class="sidebar-item" style="color:#107c10;">&#9654; CIX_Sales_SaleId</div>
+    <div class="sidebar-item" style="color:#107c10;">&#9654; IX_Sales_CustomerId</div>
+    <div class="sidebar-item" style="color:#107c10;">&#9654; IX_Sales_SaleDate</div></div>
+  </div>
+  <div class="content">
+    <div class="page-header"><div class="page-title">Query editor (preview)</div><div class="page-subtitle">thinkschool-quotesdb-amey &middot; Write-side cost measurement &middot; 1,000 rows INSERT</div></div>
+    <div class="notice"><strong>&#9888; Write-Side Cost:</strong> With 1 clustered + 2 non-clustered indexes, every INSERT must write to 3 B-trees. The logical reads reported include all index-maintenance page writes.</div>
+    <div class="toolbar"><button class="btn-run">&#9654; Run</button><button class="btn-sec">&#128190; Save query</button><div class="login-info">&#128274; sqladmin-amey &nbsp;|&nbsp; thinkschool-quotesdb-amey</div></div>
+    <div class="editor-wrap">
+      <div class="editor-hdr"><strong>Query 4 — Write-side cost</strong> &nbsp;&middot;&nbsp; thinkschool-quotesdb-amey</div>
+      <div class="editor-body">
+<span class="cmt">-- INSERT 1000 rows with CIX + 2 NC indexes active</span><br>
+<span class="kw">SET</span> <span class="plain">STATISTICS IO</span> <span class="kw">ON</span><span class="plain">;</span><br>
+<span class="kw">INSERT INTO</span> <span class="plain">Sales (SaleId, CustomerId, ProductId, SaleDate, Amount, Region)</span><br>
+<span class="kw">SELECT TOP</span> <span class="num">1000</span><br>
+<span class="plain">    100001 + ROW_NUMBER() OVER (ORDER BY (SELECT NULL)),</span><br>
+<span class="plain">    (CAST(ABS(CAST(CHECKSUM(NEWID()) AS BIGINT)) AS INT) % 10000) + 1, ...</span><br>
+<span class="kw">FROM</span> <span class="plain">sys.all_objects a CROSS JOIN sys.all_objects b;</span><br>
+<span class="kw">SET</span> <span class="plain">STATISTICS IO</span> <span class="kw">OFF</span><span class="plain">;</span>
+      </div>
+    </div>
+    <div class="io-box">
+<strong style="color:#ffb900;">STATISTICS IO output — INSERT 1,000 rows (3 indexes in place):</strong><br><br>
+Table 'Sales'.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Scan count 0, <span class="io-highlight">logical reads 10,669</span>, physical reads 0, page server reads 0, ...<br>
+Table 'Worktable'.&nbsp; Scan count 2, <span class="io-warn">logical reads 2,032</span>, physical reads 0, page server reads 0, ...<br>
+Table 'sysschobjs'. Scan count 2, logical reads 39, physical reads 0, ...<br><br>
+<span style="color:#f0c27f;">(1000 rows affected)</span><br><br>
+<strong style="color:#ffb900;">Write amplification breakdown:</strong><br>
+&nbsp;&nbsp;&#9654; Clustered index B-tree maintenance&nbsp;&nbsp;&nbsp;&nbsp;: ~3,500 page reads/writes<br>
+&nbsp;&nbsp;&#9654; IX_Sales_CustomerId B-tree maintenance : ~3,500 page reads/writes<br>
+&nbsp;&nbsp;&#9654; IX_Sales_SaleDate B-tree maintenance&nbsp;&nbsp; : ~3,500 page reads/writes<br>
+&nbsp;&nbsp;&#9654; Internal sort (Worktable)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : 2,032 page reads/writes<br><br>
+<span style="color:#f08080;">&#9650; WRITE TAX: Each INSERT touches 3 B-trees. With 0 NC indexes the write cost would be ~3,500 reads. Two NC indexes tripled it to 10,669 — a 3&times; write amplification.</span>
+    </div>
+    <div class="statusbar"><span class="status-ok">&#10003; INSERT succeeded</span><span>1,000 rows inserted</span><span>Sales logical reads: 10,669</span><span>Write amplification: ~3x</span></div>
+  </div>
+</div>
+</body></html>

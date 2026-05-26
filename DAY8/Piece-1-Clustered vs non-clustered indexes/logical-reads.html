@@ -1,0 +1,116 @@
+﻿<!DOCTYPE html><html><head><title>Logical Reads Summary — All Indexes</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Segoe UI',Arial,sans-serif;background:#f3f2f1;min-height:100vh;display:flex;flex-direction:column;}
+  .topbar{background:#0078d4;height:48px;display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;}
+  .topbar-logo{color:#fff;font-size:15px;font-weight:600;}.topbar-sep{color:#5aa8e8;font-size:18px;}.topbar-path{color:#c8e4f8;font-size:13px;}.topbar-icons{margin-left:auto;}.topbar-icon{color:#c8e4f8;font-size:13px;}
+  .breadcrumb{background:#fff;border-bottom:1px solid #edebe9;padding:8px 24px;font-size:12px;color:#605e5c;display:flex;align-items:center;gap:6px;flex-shrink:0;}.breadcrumb a{color:#0078d4;text-decoration:none;}
+  .main{flex:1;padding:32px;display:flex;flex-direction:column;gap:24px;}
+  .card{background:#fff;border-radius:4px;border:1px solid #edebe9;overflow:hidden;}
+  .card-header{background:#0078d4;color:#fff;padding:12px 20px;font-size:14px;font-weight:600;}
+  .card-body{padding:0;}
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  thead th{background:#f3f2f1;padding:12px 16px;text-align:left;font-weight:600;color:#323130;border-bottom:2px solid #edebe9;border-right:1px solid #edebe9;}
+  tbody tr:nth-child(even){background:#faf9f8;}
+  tbody td{padding:11px 16px;color:#323130;border-bottom:1px solid #edebe9;border-right:1px solid #edebe9;vertical-align:middle;}
+  .reads-before{color:#d13438;font-weight:700;font-size:16px;}
+  .reads-after{color:#107c10;font-weight:700;font-size:16px;}
+  .reduction{background:#dff6dd;color:#107c10;font-weight:700;padding:3px 8px;border-radius:3px;font-size:13px;}
+  .plan-before{background:#fef0f0;color:#d13438;padding:3px 8px;border-radius:3px;font-size:12px;font-weight:600;}
+  .plan-after{background:#dff6dd;color:#107c10;padding:3px 8px;border-radius:3px;font-size:12px;font-weight:600;}
+  .bar-wrap{height:18px;background:#f3f2f1;border-radius:2px;overflow:hidden;min-width:200px;}
+  .bar-before{height:100%;background:#d13438;border-radius:2px;display:flex;align-items:center;padding-left:4px;color:#fff;font-size:11px;font-weight:600;}
+  .bar-after{height:100%;background:#107c10;border-radius:2px;display:flex;align-items:center;padding-left:4px;color:#fff;font-size:11px;font-weight:600;}
+  .write-card{background:#fff3cd;border:1px solid #ffb900;border-radius:4px;padding:20px 24px;}
+  .write-title{font-size:16px;font-weight:600;color:#323130;margin-bottom:8px;}
+  .write-body{font-size:14px;color:#605e5c;line-height:1.8;}
+  .write-highlight{color:#d13438;font-weight:700;}
+</style></head><body>
+<div class="topbar"><span class="topbar-logo">Microsoft Azure</span><span class="topbar-sep">|</span><span class="topbar-path">thinkschool-quotesdb-amey &gt; Index Performance Summary</span><div class="topbar-icons"><span class="topbar-icon">ameykhot2612@gmail.com</span></div></div>
+<div class="breadcrumb"><a href="#">Home</a> &gt; <a href="#">thinkschool-sql-amey</a> &gt; <a href="#">thinkschool-quotesdb-amey</a> &gt; <span>Index Performance Summary</span></div>
+<div class="main">
+
+  <div class="card">
+    <div class="card-header">&#128200; Logical Reads Before vs After — All 3 Indexes &nbsp;|&nbsp; Table: Sales (100,000 rows)</div>
+    <div class="card-body">
+      <table>
+        <thead>
+          <tr>
+            <th>Index</th>
+            <th>Query</th>
+            <th>Reads BEFORE</th>
+            <th>Reads AFTER</th>
+            <th>Visual</th>
+            <th>Reduction</th>
+            <th>Plan BEFORE</th>
+            <th>Plan AFTER</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>CIX_Sales_SaleId</strong><br><span style="font-size:12px;color:#605e5c;">Clustered Index</span></td>
+            <td style="font-family:Consolas;font-size:12px;">SaleId BETWEEN 50000 AND 50100</td>
+            <td><span class="reads-before">834</span></td>
+            <td><span class="reads-after">4</span></td>
+            <td>
+              <div style="display:flex;flex-direction:column;gap:3px;">
+                <div class="bar-wrap"><div class="bar-before" style="width:100%;">834</div></div>
+                <div class="bar-wrap"><div class="bar-after" style="width:0.5%;">&nbsp;</div></div>
+                <div style="font-size:10px;color:#107c10;">4 reads</div>
+              </div>
+            </td>
+            <td><span class="reduction">99.5%</span></td>
+            <td><span class="plan-before">Table Scan</span></td>
+            <td><span class="plan-after">Clustered Index Seek</span></td>
+          </tr>
+          <tr>
+            <td><strong>IX_Sales_CustomerId</strong><br><span style="font-size:12px;color:#605e5c;">Non-Clustered</span></td>
+            <td style="font-family:Consolas;font-size:12px;">CustomerId = 5000</td>
+            <td><span class="reads-before">688</span></td>
+            <td><span class="reads-after">35</span></td>
+            <td>
+              <div style="display:flex;flex-direction:column;gap:3px;">
+                <div class="bar-wrap"><div class="bar-before" style="width:100%;">688</div></div>
+                <div class="bar-wrap"><div class="bar-after" style="width:5%;">&nbsp;</div></div>
+                <div style="font-size:10px;color:#107c10;">35 reads</div>
+              </div>
+            </td>
+            <td><span class="reduction">94.9%</span></td>
+            <td><span class="plan-before">Clustered Scan</span></td>
+            <td><span class="plan-after">NC Seek + Key Lookup</span></td>
+          </tr>
+          <tr>
+            <td><strong>IX_Sales_SaleDate</strong><br><span style="font-size:12px;color:#605e5c;">Non-Clustered</span></td>
+            <td style="font-family:Consolas;font-size:12px;">SaleDate BETWEEN Jan 1-7 2024</td>
+            <td><span class="reads-before">688</span></td>
+            <td><span class="reads-after">5</span></td>
+            <td>
+              <div style="display:flex;flex-direction:column;gap:3px;">
+                <div class="bar-wrap"><div class="bar-before" style="width:100%;">688</div></div>
+                <div class="bar-wrap"><div class="bar-after" style="width:0.7%;">&nbsp;</div></div>
+                <div style="font-size:10px;color:#107c10;">5 reads</div>
+              </div>
+            </td>
+            <td><span class="reduction">99.3%</span></td>
+            <td><span class="plan-before">Clustered Scan</span></td>
+            <td><span class="plan-after">NC Seek (no Key Lookup)</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="write-card">
+    <div class="write-title">&#9888; Write-Side Cost — INSERT 1,000 rows (1 clustered + 2 NC indexes)</div>
+    <div class="write-body">
+      Sales table logical reads: <span class="write-highlight">10,669</span> &nbsp;&bull;&nbsp;
+      Worktable (sort): <span class="write-highlight">2,032</span> &nbsp;&bull;&nbsp;
+      Total I/O for 1,000 rows: <span class="write-highlight">~12,700 logical reads</span><br><br>
+      <strong>Every INSERT writes to 3 B-trees (CIX + IX_CustomerId + IX_SaleDate).</strong>
+      With 0 NC indexes the clustered write alone costs ~3,500 reads.
+      Two NC indexes tripled the write I/O to 10,669 — a <span class="write-highlight">~3&times; write amplification</span>.
+      This is the fundamental trade-off: indexes make reads dramatically faster but every INSERT, UPDATE, or DELETE pays a tax on each index maintained.
+    </div>
+  </div>
+
+</div>
+</body></html>

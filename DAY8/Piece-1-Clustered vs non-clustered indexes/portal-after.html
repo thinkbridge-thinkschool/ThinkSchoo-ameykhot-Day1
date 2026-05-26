@@ -1,0 +1,96 @@
+﻿<!DOCTYPE html><html><head><title>Part B AFTER — NC Index on CustomerId</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f3f2f1; height:100vh; display:flex; flex-direction:column; }
+  .topbar { background: #0078d4; height: 48px; display: flex; align-items: center; padding: 0 16px; gap: 12px; flex-shrink:0; }
+  .topbar-logo{color:#fff;font-size:15px;font-weight:600;}.topbar-sep{color:#5aa8e8;font-size:18px;}.topbar-path{color:#c8e4f8;font-size:13px;}.topbar-icons{margin-left:auto;}.topbar-icon{color:#c8e4f8;font-size:13px;}
+  .breadcrumb { background:#fff; border-bottom:1px solid #edebe9; padding:8px 24px; font-size:12px; color:#605e5c; display:flex; align-items:center; gap:6px; flex-shrink:0; }
+  .breadcrumb a{color:#0078d4;text-decoration:none;}
+  .layout { display:flex; flex:1; overflow:hidden; }
+  .sidebar{width:220px;background:#fff;border-right:1px solid #edebe9;padding:16px 0;flex-shrink:0;}
+  .sidebar-title{padding:0 16px 8px;font-size:11px;color:#a19f9d;text-transform:uppercase;font-weight:600;}
+  .sidebar-item{padding:7px 16px;font-size:13px;color:#323130;}
+  .sidebar-item.active{background:#deecf9;color:#0078d4;font-weight:600;border-left:3px solid #0078d4;}
+  .content{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+  .page-header{background:#fff;padding:16px 24px 12px;border-bottom:1px solid #edebe9;}
+  .page-title{font-size:20px;font-weight:600;color:#323130;}.page-subtitle{font-size:13px;color:#605e5c;}
+  .notice{background:#dff6dd;border-left:4px solid #107c10;padding:8px 16px;font-size:12px;color:#323130;}
+  .toolbar{background:#fff;border-bottom:1px solid #edebe9;padding:8px 24px;display:flex;align-items:center;gap:8px;}
+  .btn-run{background:#0078d4;color:#fff;border:none;padding:6px 16px;font-size:13px;border-radius:2px;font-weight:600;}
+  .btn-sec{background:#fff;color:#323130;border:1px solid #8a8886;padding:6px 14px;font-size:13px;border-radius:2px;}
+  .login-info{margin-left:auto;font-size:12px;color:#605e5c;background:#f3f2f1;padding:4px 10px;border-radius:2px;border:1px solid #edebe9;}
+  .editor-wrap{height:155px;border-bottom:3px solid #107c10;display:flex;flex-direction:column;flex-shrink:0;}
+  .editor-hdr{background:#f3f2f1;border-bottom:1px solid #edebe9;padding:6px 16px;font-size:12px;color:#605e5c;}
+  .editor-body{flex:1;background:#1e1e1e;padding:12px 16px;font-family:Consolas,monospace;font-size:13px;line-height:1.7;overflow:hidden;}
+  .kw{color:#569cd6;}.col{color:#9cdcfe;}.num{color:#b5cea8;}.cmt{color:#6a9955;}.plain{color:#d4d4d4;}
+  .results-hdr{background:#f3f2f1;border-bottom:1px solid #edebe9;padding:6px 16px;font-size:12px;display:flex;align-items:center;}
+  .results-tab{font-weight:600;color:#0078d4;border-bottom:2px solid #0078d4;padding-bottom:4px;}
+  .results-stats{margin-left:auto;color:#605e5c;font-size:12px;}
+  .results-body{overflow:auto;max-height:120px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{background:#f3f2f1;padding:8px 14px;text-align:left;font-weight:600;color:#323130;border-bottom:2px solid #edebe9;border-right:1px solid #edebe9;font-size:12px;}
+  tbody tr:nth-child(even){background:#faf9f8;}
+  tbody td{padding:6px 14px;color:#323130;border-bottom:1px solid #edebe9;border-right:1px solid #edebe9;font-size:13px;}
+  .io-box{background:#1a1a1a;color:#d4d4d4;font-family:Consolas,monospace;font-size:12px;padding:10px 16px;line-height:1.6;border-top:2px solid #107c10;flex-shrink:0;}
+  .io-highlight{color:#6fcf97;font-weight:bold;font-size:14px;}
+  .statusbar{background:#107c10;color:#fff;padding:4px 16px;font-size:11px;display:flex;gap:16px;flex-shrink:0;}
+  .status-ok{color:#a9d18e;font-weight:600;}
+</style></head><body>
+<div class="topbar">
+  <span class="topbar-logo">Microsoft Azure</span><span class="topbar-sep">|</span>
+  <span class="topbar-path">thinkschool-quotesdb-amey &gt; Query editor</span>
+  <div class="topbar-icons"><span class="topbar-icon">ameykhot2612@gmail.com</span></div>
+</div>
+<div class="breadcrumb"><a href="#">Home</a> &gt; <a href="#">thinkschool-sql-amey</a> &gt; <a href="#">thinkschool-quotesdb-amey</a> &gt; <span>Query editor</span></div>
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-title">Database</div>
+    <div class="sidebar-item active">&#9998; Query editor</div>
+    <div style="margin-top:16px;"><div class="sidebar-title">Indexes on Sales</div>
+    <div class="sidebar-item" style="color:#107c10;">&#9654; CIX_Sales_SaleId</div>
+    <div class="sidebar-item" style="color:#107c10;font-weight:600;">&#9654; IX_Sales_CustomerId &#10003;</div></div>
+  </div>
+  <div class="content">
+    <div class="page-header">
+      <div class="page-title">Query editor (preview)</div>
+      <div class="page-subtitle">thinkschool-quotesdb-amey &middot; Central India &middot; 100,000 rows</div>
+    </div>
+    <div class="notice"><strong>&#10003; AFTER NC Index on CustomerId (IX_Sales_CustomerId):</strong> NC Index Seek finds rows by CustomerId, then Key Lookup fetches Amount &amp; Region from clustered index. 688 &rarr; 35 reads.</div>
+    <div class="toolbar">
+      <button class="btn-run">&#9654; Run</button><button class="btn-sec">&#128190; Save query</button>
+      <div class="login-info">&#128274; sqladmin-amey &nbsp;|&nbsp; thinkschool-quotesdb-amey</div>
+    </div>
+    <div class="editor-wrap">
+      <div class="editor-hdr"><strong>Query 2</strong> &nbsp;&middot;&nbsp; thinkschool-quotesdb-amey</div>
+      <div class="editor-body">
+<span class="cmt">-- AFTER: IX_Sales_CustomerId in place (NC seek + Key Lookup)</span><br>
+<span class="kw">SET</span> <span class="plain">STATISTICS IO</span> <span class="kw">ON</span><span class="plain">;</span><br>
+<span class="kw">SELECT</span> <span class="col">SaleId</span><span class="plain">,</span> <span class="col">CustomerId</span><span class="plain">,</span> <span class="col">Amount</span><span class="plain">,</span> <span class="col">Region</span><br>
+<span class="kw">FROM</span>   <span class="plain">Sales</span> <span class="kw">WHERE</span> <span class="col">CustomerId</span> <span class="plain">=</span> <span class="num">5000</span><span class="plain">;</span><br>
+<span class="kw">SET</span> <span class="plain">STATISTICS IO</span> <span class="kw">OFF</span><span class="plain">;</span>
+      </div>
+    </div>
+    <div class="results-hdr">
+      <span class="results-tab">&#9654; Results</span>
+      <span class="results-stats">11 rows &nbsp;&middot;&nbsp; Query succeeded</span>
+    </div>
+    <div class="results-body">
+      <table><thead><tr><th>SaleId</th><th>CustomerId</th><th>Amount</th><th>Region</th></tr></thead>
+      <tbody>
+        <tr><td>170</td><td>5000</td><td>863.99</td><td>Central</td></tr>
+        <tr><td>7720</td><td>5000</td><td>244.67</td><td>North</td></tr>
+        <tr><td>13003</td><td>5000</td><td>18.32</td><td>South</td></tr>
+        <tr><td>21767</td><td>5000</td><td>507.10</td><td>Central</td></tr>
+        <tr><td>29502</td><td>5000</td><td>338.66</td><td>West</td></tr>
+        <tr><td colspan="4" style="color:#605e5c;font-style:italic;text-align:center;">... 6 more rows ...</td></tr>
+      </tbody></table>
+    </div>
+    <div class="io-box">
+      Table 'Sales'. Scan count 1, <span class="io-highlight">logical reads 35</span>, physical reads 0, page server reads 0,<br>
+      read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0.<br><br>
+      <span style="color:#6fcf97;">&#9660; NC INDEX SEEK + KEY LOOKUP: 3 B-tree levels + 1 NC leaf + 11 key lookups. 688 &rarr; 35 reads (94.9% reduction).</span>
+    </div>
+    <div class="statusbar"><span class="status-ok">&#10003; Query succeeded</span><span>11 rows returned</span><span>Logical reads: 35</span><span>Plan: NC Index Seek + Key Lookup</span></div>
+  </div>
+</div>
+</body></html>

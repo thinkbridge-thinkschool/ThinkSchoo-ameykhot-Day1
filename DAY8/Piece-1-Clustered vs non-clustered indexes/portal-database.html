@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Azure Portal — SQL Database Overview</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f3f2f1; min-height: 100vh; }
+
+  .topbar { background: #0078d4; height: 48px; display: flex; align-items: center; padding: 0 16px; gap: 12px; }
+  .topbar-logo { color: #fff; font-size: 15px; font-weight: 600; }
+  .topbar-sep { color: #5aa8e8; font-size: 18px; }
+  .topbar-search { background: rgba(255,255,255,0.15); border: none; color: #fff; padding: 6px 14px; border-radius: 2px; font-size: 13px; width: 300px; }
+  .topbar-search::placeholder { color: rgba(255,255,255,0.7); }
+  .topbar-icons { margin-left: auto; display: flex; gap: 20px; align-items: center; }
+  .topbar-icon { color: #c8e4f8; font-size: 13px; }
+  .topbar-avatar { background: #fff; color: #0078d4; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+
+  .breadcrumb { background: #fff; border-bottom: 1px solid #edebe9; padding: 8px 24px; font-size: 12px; color: #605e5c; display: flex; align-items: center; gap: 6px; }
+  .breadcrumb a { color: #0078d4; text-decoration: none; }
+  .breadcrumb-sep { color: #c8c6c4; }
+
+  .layout { display: flex; min-height: calc(100vh - 72px); }
+
+  .sidebar { width: 48px; background: #1b1a19; display: flex; flex-direction: column; align-items: center; padding: 8px 0; gap: 4px; flex-shrink: 0; }
+  .sidebar-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: #c8c6c4; font-size: 18px; border-radius: 4px; cursor: pointer; }
+  .sidebar-icon.active { background: #323130; color: #fff; }
+
+  .content { flex: 1; overflow-y: auto; }
+
+  .resource-header { background: #fff; padding: 20px 24px 0; border-bottom: 1px solid #edebe9; }
+  .resource-type { font-size: 12px; color: #605e5c; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .resource-icon { font-size: 20px; }
+  .resource-name { font-size: 24px; font-weight: 600; color: #323130; margin-bottom: 8px; }
+  .resource-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .tag { background: #f3f2f1; border: 1px solid #edebe9; padding: 3px 10px; border-radius: 12px; font-size: 12px; color: #605e5c; }
+  .resource-actions { display: flex; gap: 8px; padding: 10px 0; border-top: 1px solid #edebe9; }
+  .action-btn { display: flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 13px; border-radius: 2px; cursor: pointer; border: none; }
+  .action-primary { background: #0078d4; color: #fff; }
+  .action-secondary { background: #fff; color: #323130; border: 1px solid #8a8886 !important; }
+
+  .resource-nav { background: #fff; border-bottom: 1px solid #edebe9; padding: 0 24px; display: flex; gap: 0; }
+  .nav-item { padding: 10px 16px; font-size: 13px; color: #605e5c; cursor: pointer; border-bottom: 2px solid transparent; }
+  .nav-item.active { color: #0078d4; border-bottom-color: #0078d4; font-weight: 600; }
+
+  .overview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 24px; }
+
+  .info-card { background: #fff; border: 1px solid #edebe9; border-radius: 4px; overflow: hidden; }
+  .info-card-title { padding: 12px 16px; font-size: 13px; font-weight: 600; color: #323130; border-bottom: 1px solid #edebe9; background: #faf9f8; }
+  .info-card-body { padding: 4px 0; }
+  .info-row { display: flex; padding: 7px 16px; border-bottom: 1px solid #faf9f8; }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { color: #605e5c; font-size: 12px; width: 150px; flex-shrink: 0; }
+  .info-value { font-size: 13px; color: #323130; flex: 1; }
+  .info-value a { color: #0078d4; text-decoration: none; }
+  .info-value.green { color: #107c10; font-weight: 600; }
+  .info-value.blue { color: #0078d4; }
+
+  .metric-card { background: #fff; border: 1px solid #edebe9; border-radius: 4px; overflow: hidden; }
+  .metric-card-title { padding: 12px 16px; font-size: 13px; font-weight: 600; color: #323130; border-bottom: 1px solid #edebe9; background: #faf9f8; }
+  .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
+  .metric-item { padding: 16px; border-right: 1px solid #edebe9; border-bottom: 1px solid #edebe9; text-align: center; }
+  .metric-item:nth-child(3n) { border-right: none; }
+  .metric-value { font-size: 22px; font-weight: 700; color: #0078d4; }
+  .metric-label { font-size: 11px; color: #605e5c; margin-top: 4px; }
+
+  .indexes-card { background: #fff; border: 1px solid #edebe9; border-radius: 4px; overflow: hidden; grid-column: 1 / -1; }
+  .indexes-card-title { padding: 12px 16px; font-size: 13px; font-weight: 600; color: #323130; border-bottom: 1px solid #edebe9; background: #faf9f8; display: flex; justify-content: space-between; align-items: center; }
+  .idx-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .idx-table th { background: #f3f2f1; padding: 8px 14px; text-align: left; font-weight: 600; color: #323130; border-bottom: 1px solid #edebe9; font-size: 12px; }
+  .idx-table td { padding: 8px 14px; border-bottom: 1px solid #faf9f8; color: #323130; }
+  .idx-table tr:hover td { background: #f3f2f1; }
+  .badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge-clustered { background: #deecf9; color: #0078d4; }
+  .badge-covering { background: #dff6dd; color: #107c10; }
+  .badge-nonclustered { background: #fff4ce; color: #835c00; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-logo">Microsoft Azure</span>
+  <span class="topbar-sep">|</span>
+  <input class="topbar-search" placeholder="&#128269;  Search resources, services, and docs (G+/)">
+  <div class="topbar-icons">
+    <span class="topbar-icon">&#9881;</span>
+    <span class="topbar-icon">&#128276;</span>
+    <span class="topbar-icon">&#63;</span>
+    <div class="topbar-avatar">AK</div>
+  </div>
+</div>
+
+<div class="breadcrumb">
+  <a href="#">Home</a><span class="breadcrumb-sep"> &gt; </span>
+  <a href="#">SQL servers</a><span class="breadcrumb-sep"> &gt; </span>
+  <a href="#">thinkschool-sql-amey</a><span class="breadcrumb-sep"> &gt; </span>
+  <span>thinkschool-quotesdb-amey</span>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-icon active">&#8962;</div>
+    <div class="sidebar-icon">&#128196;</div>
+    <div class="sidebar-icon">&#128202;</div>
+    <div class="sidebar-icon">&#9881;</div>
+    <div class="sidebar-icon">&#128274;</div>
+  </div>
+
+  <div class="content">
+    <div class="resource-header">
+      <div class="resource-type">
+        <span class="resource-icon">&#128202;</span>
+        SQL database
+      </div>
+      <div class="resource-name">thinkschool-quotesdb-amey</div>
+      <div class="resource-tags">
+        <span class="tag">&#128205; Central India</span>
+        <span class="tag">&#128194; thinkschool-rg-amey</span>
+        <span class="tag">&#9989; Online</span>
+        <span class="tag">Basic · 5 DTUs</span>
+        <span class="tag">Azure for Students</span>
+      </div>
+      <div class="resource-actions">
+        <button class="action-btn action-primary">&#128196; Query editor</button>
+        <button class="action-btn action-secondary">&#128203; Copy connection string</button>
+        <button class="action-btn action-secondary">&#128465; Delete</button>
+        <button class="action-btn action-secondary">&#8635; Refresh</button>
+      </div>
+    </div>
+
+    <div class="resource-nav">
+      <div class="nav-item active">Overview</div>
+      <div class="nav-item">Activity log</div>
+      <div class="nav-item">Query editor</div>
+      <div class="nav-item">Performance</div>
+      <div class="nav-item">Backups</div>
+      <div class="nav-item">Security</div>
+      <div class="nav-item">Settings</div>
+    </div>
+
+    <div class="overview-grid">
+
+      <div class="info-card">
+        <div class="info-card-title">Essentials</div>
+        <div class="info-card-body">
+          <div class="info-row">
+            <span class="info-label">Resource group</span>
+            <span class="info-value"><a href="#">thinkschool-rg-amey</a></span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Status</span>
+            <span class="info-value green">&#9679; Online</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Location</span>
+            <span class="info-value">Central India</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Subscription</span>
+            <span class="info-value"><a href="#">Azure for Students</a></span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Server name</span>
+            <span class="info-value"><a href="#">thinkschool-sql-amey</a></span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Pricing tier</span>
+            <span class="info-value">Basic (5 DTUs, 2 GB)</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Collation</span>
+            <span class="info-value">SQL_Latin1_General_CP1_CI_AS</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Connection string</span>
+            <span class="info-value blue" style="font-size:11px;">Server=tcp:thinkschool-sql-amey.database.windows.net,1433...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-card-title">Database activity</div>
+        <div class="metrics-grid">
+          <div class="metric-item">
+            <div class="metric-value">5</div>
+            <div class="metric-label">Authors</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-value">10</div>
+            <div class="metric-label">Quotes</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-value">3</div>
+            <div class="metric-label">Indexes</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-value" style="font-size:16px; color:#107c10;">2 GB</div>
+            <div class="metric-label">Max storage</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-value" style="font-size:16px;">5</div>
+            <div class="metric-label">DTUs allocated</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-value" style="font-size:16px; color:#107c10;">~3%</div>
+            <div class="metric-label">DTU usage</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="indexes-card">
+        <div class="indexes-card-title">
+          <span>Indexes on dbo.Quotes — Day 8 Covering Index Demonstration</span>
+          <span style="font-size:12px; color:#605e5c; font-weight:400;">3 indexes total</span>
+        </div>
+        <table class="idx-table">
+          <thead>
+            <tr>
+              <th>Index Name</th>
+              <th>Table</th>
+              <th>Type</th>
+              <th>Key Columns</th>
+              <th>Include Columns</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>PK__Quotes__3214EC07...</td>
+              <td>dbo.Quotes</td>
+              <td><span class="badge badge-clustered">Clustered</span></td>
+              <td>Id</td>
+              <td>—</td>
+              <td>Primary key, row storage</td>
+            </tr>
+            <tr>
+              <td>IX_Quotes_AuthorId</td>
+              <td>dbo.Quotes</td>
+              <td><span class="badge badge-nonclustered">Non-Clustered</span></td>
+              <td>AuthorId</td>
+              <td>—</td>
+              <td>BEFORE: causes Key Lookup for Text, CreatedAt</td>
+            </tr>
+            <tr>
+              <td><strong>IX_Quotes_AuthorId_Covering</strong></td>
+              <td>dbo.Quotes</td>
+              <td><span class="badge badge-covering">Covering</span></td>
+              <td>AuthorId</td>
+              <td>Text, CreatedAt</td>
+              <td>AFTER: eliminates Key Lookup — all columns in index</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
