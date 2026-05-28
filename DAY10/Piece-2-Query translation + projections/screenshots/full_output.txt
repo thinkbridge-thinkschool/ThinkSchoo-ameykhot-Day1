@@ -1,0 +1,110 @@
+═══════════════════════════════════════════════════════════════════
+  Day 10 · Piece 2 — Query Translation + Projections
+  EF Core LogTo · SELECT * vs projected · client-eval catch
+═══════════════════════════════════════════════════════════════════
+
+① Setup & Seed (SQL logging OFF — noise reduction)
+  1,000 rows already present — skipping seed.
+  Schema ready.
+
+② Demo 1 — Full Entity Query
+──────────────────────────────────────────────────────────────────
+  DEMO 1 — Full Entity Query  (fetches ALL 7 columns)
+──────────────────────────────────────────────────────────────────
+
+  C# code:
+    context.Products
+           .Where(p => p.IsActive)
+           .Take(5)
+           .ToListAsync()
+
+  ── EF-generated SQL ─────────────────────────────────────
+Executed DbCommand (20ms) [Parameters=[@p='5'], CommandType='Text', CommandTimeout='30']
+SELECT "p"."ProductId", "p"."Category", "p"."Description", "p"."IsActive", "p"."Name", "p"."Price", "p"."Stock"
+FROM "Products" AS "p"
+WHERE "p"."IsActive"
+LIMIT @p
+  ─────────────────────────────────────────────────────────
+
+  Result  : 5 Product objects returned
+  Columns : ProductId, Name, Category, Price, Stock, IsActive, Description
+  Sample  : [1] Product-00001  $1.99  active=True
+            desc="Premium grade item with extended warranty"
+
+  Problem : Description and Stock travelled over the wire
+            but the caller never uses them.
+
+③ Demo 2 — Projected Query
+──────────────────────────────────────────────────────────────────
+  DEMO 2 — Projected Query  (fetches only 3 columns)
+──────────────────────────────────────────────────────────────────
+
+  C# code:
+    context.Products
+           .Where(p => p.IsActive)
+           .Select(p => new ProductSummaryDto {
+               ProductId = p.ProductId,
+               Name      = p.Name,
+               Price     = p.Price
+           })
+           .Take(5)
+           .ToListAsync()
+
+  ── EF-generated SQL ─────────────────────────────────────
+Executed DbCommand (0ms) [Parameters=[@p='5'], CommandType='Text', CommandTimeout='30']
+SELECT "p"."ProductId", "p"."Name", "p"."Price"
+FROM "Products" AS "p"
+WHERE "p"."IsActive"
+LIMIT @p
+  ─────────────────────────────────────────────────────────
+
+  Result  : 5 ProductSummaryDto objects returned
+  Columns : ProductId, Name, Price  (3 of 7)
+  Sample  : [1] Product-00001  $1.99
+
+  Win     : Category, Stock, IsActive, Description are never
+            read from disk or sent across the network.
+
+④ Demo 3 — Client-Side Evaluation
+──────────────────────────────────────────────────────────────────
+  DEMO 3 — Accidental Client-Side Evaluation (caught + fixed)
+──────────────────────────────────────────────────────────────────
+
+  [BAD] Using a custom C# method inside .Where()
+  ─────────────────────────────────────────────────
+    context.Products
+           .Where(p => IsHighValue(p.Price))  // not translatable
+           .Take(5)
+           .ToListAsync()
+
+  Attempting bad query...
+
+  CAUGHT InvalidOperationException:
+  The LINQ expression 'DbSet<Product>()
+    .Where(p => Demo3_ClientEval.IsHighValue(p.Price))' could not be translated. Additional information: Translation of method 'QueryProjectionDemo.Demo3_ClientEval.IsHighValue' failed. If this method can be mapped to your custom function, see https://go.micros…
+
+  [FIX] Inline the predicate so EF can translate it to SQL
+  ─────────────────────────────────────────────────
+    context.Products
+           .Where(p => p.Price > 500m)  // translatable
+           .Take(5)
+           .ToListAsync()
+
+  ── EF-generated SQL ─────────────────────────────────────
+Executed DbCommand (14ms) [Parameters=[@p='5'], CommandType='Text', CommandTimeout='30']
+SELECT "p"."ProductId", "p"."Category", "p"."Description", "p"."IsActive", "p"."Name", "p"."Price", "p"."Stock"
+FROM "Products" AS "p"
+WHERE ef_compare("p"."Price", '500.0') > 0
+LIMIT @p
+  ─────────────────────────────────────────────────────────
+
+  Result  : 5 rows returned successfully
+  Sample  : [500] Product-00500  $500.99
+
+  Rule    : never call a plain C# method in a .Where() on
+            IQueryable — use member-access / operators that
+            EF Core's SQL provider can translate.
+
+═══════════════════════════════════════════════════════════════════
+  Done.  See SOLUTION.md for the full submission write-up.
+═══════════════════════════════════════════════════════════════════
