@@ -138,14 +138,14 @@ optionsBuilder
 ```
 Metric                        Tracked   AsNoTracking      Saved
 ----------------------------------------------------------------
-Avg time (ms)                   433.4          133.8      +299.6
-Avg allocated (KB)               8744           3899      +4845
+Avg time (ms)                  1236.6          233.0     +1003.6
+Avg allocated (KB)               8882           3901      +4981
 ```
 
 | Metric | With Tracking | AsNoTracking | Saving |
 |---|---|---|---|
-| Avg time | 433.4 ms | 133.8 ms | **~69 % faster** |
-| Avg allocated | 8 744 KB | 3 899 KB | **~55 % less memory** |
+| Avg time | 1236.6 ms | 233.0 ms | **~81% faster** |
+| Avg allocated | 8 882 KB | 3 901 KB | **~56% less memory** |
 
 The allocation gap **is** the change-tracker tax:
 - One `EntityEntry` wrapper per entity
@@ -178,7 +178,7 @@ await db.SaveChangesAsync();   // EF diffs snapshot → UPDATE Products SET Pric
 The change tracker is a **per-context identity map + snapshot store**. Every tracked entity
 costs: a dictionary entry (identity map) + a property-values clone (snapshot for diff). For
 pure read paths — reports, projections, API serialisation — `AsNoTracking()` removes both
-overheads, giving **~69 % speed and ~55 % memory savings** on 10 000 rows in this test.
+overheads, giving **~81% speed and ~56% memory savings** on 10 000 rows in this test.
 
 The subtlest finding: `FindAsync` is genuinely zero-round-trip when the entity is already tracked,
 while `FirstAsync` always fires SQL. And the silent-failure trap (Demo 5) is where real bugs hide.
