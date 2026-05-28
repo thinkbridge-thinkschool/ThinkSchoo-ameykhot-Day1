@@ -115,17 +115,11 @@ The query was saved as a reusable function via the Log Analytics REST API (`PUT 
 | **Workspace** | `log-342m3golxdrt6` |
 | **Resource ID** | `/subscriptions/6b3f49de-c9ab-436d-b896-27ebc13a1e3a/resourceGroups/rg-quotes-amey/providers/Microsoft.OperationalInsights/workspaces/log-342m3golxdrt6/savedSearches/EndpointPerformance` |
 
-**GET verification response from Azure REST API:**
+**Screenshot — portal confirmation toast:**
 
-```json
-{
-  "displayName": "EndpointPerformance",
-  "functionAlias": "EndpointPerformance",
-  "category": "QuotesAPI",
-  "version": 2,
-  "query": "requests\n| where timestamp > ago(30m)\n| summarize count(), p50=percentile(duration, 50), p99=percentile(duration, 99) by name\n| order by p99 desc"
-}
-```
+![EndpointPerformance saved confirmation](KQL%20function.png)
+
+> Portal shows: *"Successfully saved function 'EndpointPerformance'"* (green toast, top-right). The function tab `EndpointPer…` is visible in the query editor. Query ran in 4s 290ms.
 
 Once saved, the function can be called directly in any future query without re-typing:
 
