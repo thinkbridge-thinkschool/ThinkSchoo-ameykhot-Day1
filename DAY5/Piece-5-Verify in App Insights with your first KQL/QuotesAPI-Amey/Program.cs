@@ -162,6 +162,23 @@ app.MapQuoteEndpoints();
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTimeOffset.UtcNow }));
 
+app.MapGet("/", () => Results.Ok(new
+{
+    app     = "QuotesAPI",
+    version = "1.0",
+    status  = "running",
+    endpoints = new[]
+    {
+        "GET  /health",
+        "GET  /api/quotes",
+        "GET  /api/quotes/{id}",
+        "POST /api/quotes  (requires Bearer token)",
+        "POST /api/auth/login",
+        "POST /api/auth/refresh",
+        "POST /api/auth/logout"
+    }
+}));
+
 app.Run();
 
 // Expose to integration test assembly

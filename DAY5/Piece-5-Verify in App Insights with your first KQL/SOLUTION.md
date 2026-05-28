@@ -103,24 +103,43 @@ requests
 
 ---
 
-## Step 4 — Saved as Function
+## Step 4 — Saved as Function (Confirmed)
 
-After running the query:
-- Click **Save** → **Save as Function**
-- **Function name:** `EndpointPerformance`
-- **Legacy category:** `QuotesAPI`
-- Click **Save**
+The query was saved as a reusable function via the Log Analytics REST API (`PUT savedSearches/EndpointPerformance`) and verified with a GET request:
 
-Saved function can be called directly in future queries:
+| Field | Value |
+|---|---|
+| **Function name** | `EndpointPerformance` |
+| **Alias** | `EndpointPerformance` |
+| **Category** | `QuotesAPI` |
+| **Workspace** | `log-342m3golxdrt6` |
+| **Resource ID** | `/subscriptions/6b3f49de-c9ab-436d-b896-27ebc13a1e3a/resourceGroups/rg-quotes-amey/providers/Microsoft.OperationalInsights/workspaces/log-342m3golxdrt6/savedSearches/EndpointPerformance` |
+
+**Screenshot — portal confirmation toast:**
+
+![EndpointPerformance saved confirmation](KQL%20function.png)
+
+> Portal shows: *"Successfully saved function 'EndpointPerformance'"* (green toast, top-right). The function tab `EndpointPer…` is visible in the query editor. Query ran in 4s 290ms.
+
+Once saved, the function can be called directly in any future query without re-typing:
+
 ```kql
 EndpointPerformance
 ```
 
+The function appears in App Insights → Logs → **Queries hub** → category **QuotesAPI**.
+
 ---
 
-## Observation About Results
+## Observation — Which Endpoint Surprised Me Most
 
-**p99 is 50–750× higher than p50 across every endpoint.** `GET /api/quotes/` shows p50=3ms but p99=272ms — a 90× gap. `GET /health` shows p50=0.37ms but p99=181ms — a 490× gap. This extreme spread is caused by cold-start latency on scale-from-zero restarts: the first request after the container spins up absorbs the full startup cost, inflating p99 while warm requests stay under 5ms. In a production SLA, this means p99 is a misleading metric for low-traffic Container Apps unless you account for scale-from-zero behavior.
+**`GET /health` surprised me the most.**
+
+I expected it to be the fastest endpoint — it does nothing except return `{ "status": "healthy" }` with no database call. But its p99 was **181ms**, which is actually *higher* than `GET /api/quotes/{id}` (p99 = 60ms), a route that runs a real database query.
+
+The reason: `GET /health` had a p50 of **0.37ms** but a p99 of **181ms** — a **490× gap**. That extreme spread means one request in every hundred is ~500 times slower than the median. This is caused by **cold-start on scale-from-zero**: the Container App scales down when idle, and the first incoming request — whichever route it hits — absorbs the full container startup cost (~180ms). Since `/health` was the first endpoint hit after each idle period (I used it as a warm-up), it absorbed every cold-start penalty.
+
+The lesson: for low-traffic Container Apps that scale from zero, p99 reflects startup latency more than actual endpoint logic. Pinning `minReplicas: 1` eliminates cold starts but keeps the container running 24/7 (small cost). For a health check endpoint the p99 should be under 5ms — 181ms is a red flag in any SLA.
 
 ---
 
