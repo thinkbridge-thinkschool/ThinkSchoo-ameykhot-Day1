@@ -1,104 +1,111 @@
 -- ============================================================
 -- Day 9 | Piece 1 — Isolation Levels + The Read Anomalies
+-- Database : IsolationDemo
+-- Server   : thinkschool-sql-amey.database.windows.net
 -- ============================================================
--- Run each anomaly with two simultaneous sqlcmd sessions.
--- Connection string (both sessions):
---   sqlcmd -S thinkschool-sql-amey.database.windows.net
---          -d thinkschool-quotesdb-amey
---          -U sqladmin-amey -P ThinkSchool@123
--- ============================================================
+
+
+-- ===========================================================
+-- SETUP — run once before all demos
+-- ===========================================================
+
+CREATE TABLE Accounts (
+    Id      INT PRIMARY KEY,
+    Name    NVARCHAR(50)   NOT NULL,
+    Balance DECIMAL(10,2) NOT NULL
+);
+GO
+
+INSERT INTO Accounts VALUES
+(1,'Alice',500.00),(2,'Bob',750.00),(3,'Carol',1200.00),(4,'Dave',900.00),
+(5,'Eve',1100.00),(6,'Frank',600.00),(7,'Grace',1300.00),(8,'Hannah',2500.00),
+(9,'Ian',800.00),(10,'Jane',1400.00),(11,'Kevin',950.00),(12,'Laura',3000.00),
+(13,'Mike',700.00),(14,'Nancy',1800.00),(15,'Oscar',1100.00),(16,'Pamela',2200.00),
+(17,'Quinn',850.00),(18,'Rachel',1200.00),(19,'Steve',500.00),(20,'Tracy',4000.00);
+GO
 
 
 -- ===========================================================
 -- ANOMALY 1 — DIRTY READ
--- Problem: Session 2 reads data that Session 1 has changed
---          but NOT yet committed.
+-- Session B reads Balance = 99999.00 from Session A's open
+-- (uncommitted) transaction. After rollback it never existed.
 -- ===========================================================
 
--- SESSION 1 (run first)
+-- SESSION A (run first)
+USE IsolationDemo;
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
 BEGIN TRANSACTION;
-
-UPDATE Quotes
-SET Text = 'DIRTY UNCOMMITTED VALUE'
-WHERE Id = 1;
-
-PRINT 'S1: Updated (not committed) — dirty value written';
-
-WAITFOR DELAY '00:00:10';   -- keep transaction open for S2 to read
-
+    UPDATE Accounts SET Balance = 99999.00 WHERE Id = 20;
+    WAITFOR DELAY '00:00:30';
 ROLLBACK;
-PRINT 'S1: Rolled back — dirty value is gone';
 GO
 
--- SESSION 2 (run immediately after Session 1 starts)
-SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  -- allows dirty reads
+-- SESSION B (run while Session A is executing)
+USE IsolationDemo;
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
-SELECT Id, Text
-FROM Quotes
-WHERE Id = 1;
--- Expected: returns 'DIRTY UNCOMMITTED VALUE' — data never committed
+SELECT Id, Name, Balance FROM Accounts WHERE Id = 20;
+-- Returns 99999.00 (dirty - never committed)
 GO
 
 
 -- ===========================================================
 -- ANOMALY 2 — NON-REPEATABLE READ
--- Problem: Session 2 reads the same row twice and gets
---          different values because Session 1 changed it
---          in between the two reads.
+-- Session A reads Id=12 twice. Session B updates Balance
+-- between the two reads. Session A gets two different values.
 -- ===========================================================
 
--- SESSION 2 (run first)
+-- SESSION A (run first)
+USE IsolationDemo;
 SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
 BEGIN TRANSACTION;
+    SELECT Id, Name, Balance FROM Accounts WHERE Id = 12;
+    -- First result: 3000.00
 
-PRINT 'S2 — First read:';
-SELECT Id, Text FROM Quotes WHERE Id = 1;  -- original value
+    WAITFOR DELAY '00:00:30';
 
-WAITFOR DELAY '00:00:05';                   -- window for S1 to update
-
-PRINT 'S2 — Second read (same query):';
-SELECT Id, Text FROM Quotes WHERE Id = 1;  -- different value!
-
+    SELECT Id, Name, Balance FROM Accounts WHERE Id = 12;
+    -- Second result: 9999.00 (changed!)
 COMMIT;
 GO
 
--- SESSION 1 (run while Session 2 is in WAITFOR)
-UPDATE Quotes
-SET Text = 'UPDATED BY SESSION 1'
-WHERE Id = 1;
+-- SESSION B (run while Session A is executing)
+USE IsolationDemo;
+
+BEGIN TRANSACTION;
+    UPDATE Accounts SET Balance = 9999.00 WHERE Id = 12;
 COMMIT;
 GO
 
 
 -- ===========================================================
 -- ANOMALY 3 — PHANTOM READ
--- Problem: Session 2 runs the same range query twice and
---          gets a different row count because Session 1
---          inserted a new row in between.
+-- Session A queries Balance > 1500 twice. Session B inserts
+-- Uma between the two reads. Session A sees 5 then 6 rows.
 -- ===========================================================
 
--- SESSION 2 (run first)
-SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+-- SESSION A (run first)
+USE IsolationDemo;
+SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
 BEGIN TRANSACTION;
+    SELECT * FROM Accounts WHERE Balance > 1500.00;
+    -- First result: 5 rows (Hannah, Laura, Nancy, Pamela, Tracy)
 
-PRINT 'S2 — First count:';
-SELECT COUNT(*) AS QuoteCount
-FROM Quotes
-WHERE AuthorId = 1;             -- e.g. returns 3
+    WAITFOR DELAY '00:00:30';
 
-WAITFOR DELAY '00:00:05';       -- window for S1 to insert
-
-PRINT 'S2 — Second count (same query):';
-SELECT COUNT(*) AS QuoteCount
-FROM Quotes
-WHERE AuthorId = 1;             -- returns 4 — phantom row appeared!
-
+    SELECT * FROM Accounts WHERE Balance > 1500.00;
+    -- Second result: 6 rows (Uma appears as phantom!)
 COMMIT;
 GO
 
--- SESSION 1 (run while Session 2 is in WAITFOR)
-INSERT INTO Quotes (AuthorId, Text)
-VALUES (1, 'PHANTOM NEW QUOTE');
+-- SESSION B (run while Session A is executing)
+USE IsolationDemo;
+
+BEGIN TRANSACTION;
+    INSERT INTO Accounts VALUES (21, 'Uma', 5000.00);
 COMMIT;
 GO
 
@@ -107,28 +114,31 @@ GO
 -- PREVENTION SCRIPTS
 -- ===========================================================
 
--- Prevent Dirty Read — use READ COMMITTED (SQL Server default)
+-- Prevent Dirty Read → READ COMMITTED
+-- Session B blocks until Session A commits or rolls back
+USE IsolationDemo;
 SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
-SELECT Id, Text FROM Quotes WHERE Id = 1;
--- S2 will BLOCK until S1's transaction ends; never sees uncommitted data.
+SELECT Id, Name, Balance FROM Accounts WHERE Id = 20;
 GO
 
--- Prevent Non-Repeatable Read — use REPEATABLE READ
+-- Prevent Non-Repeatable Read → REPEATABLE READ
+-- Shared lock held on Id=12 until Session A commits
+USE IsolationDemo;
 SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 BEGIN TRANSACTION;
-SELECT Id, Text FROM Quotes WHERE Id = 1;   -- places shared lock
--- S1's UPDATE is BLOCKED until this transaction commits.
-WAITFOR DELAY '00:00:05';
-SELECT Id, Text FROM Quotes WHERE Id = 1;   -- same value as first read
+    SELECT Id, Name, Balance FROM Accounts WHERE Id = 12;
+    WAITFOR DELAY '00:00:10';
+    SELECT Id, Name, Balance FROM Accounts WHERE Id = 12;  -- same value
 COMMIT;
 GO
 
--- Prevent Phantom Read — use SERIALIZABLE
+-- Prevent Phantom Read → SERIALIZABLE
+-- Key-range lock on Balance > 1500 — no INSERT can match until commit
+USE IsolationDemo;
 SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 BEGIN TRANSACTION;
-SELECT COUNT(*) AS QuoteCount FROM Quotes WHERE AuthorId = 1;
--- S1's INSERT is BLOCKED (key-range lock held on AuthorId = 1).
-WAITFOR DELAY '00:00:05';
-SELECT COUNT(*) AS QuoteCount FROM Quotes WHERE AuthorId = 1;   -- same count
+    SELECT * FROM Accounts WHERE Balance > 1500.00;
+    WAITFOR DELAY '00:00:10';
+    SELECT * FROM Accounts WHERE Balance > 1500.00;  -- same rows
 COMMIT;
 GO

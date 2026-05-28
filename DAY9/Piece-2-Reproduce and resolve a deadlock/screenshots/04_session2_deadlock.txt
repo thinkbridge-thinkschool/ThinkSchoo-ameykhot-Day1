@@ -1,0 +1,30 @@
+================================================================================
+STEPS 3 & 4 — DEADLOCK REPRO
+03_session1_deadlock.sql  +  04_session2_deadlock.sql  (run simultaneously)
+Server: DESKTOP-JBDCVIM\SQLEXPRESS   Date: 2026-05-28
+================================================================================
+
+--- SESSION 1 OUTPUT (WINNER) ---
+
+Changed database context to 'DeadlockDemo'.
+
+(1 rows affected)       <- UPDATE AccountA SET Balance = Balance - 100  [X-lock acquired]
+
+(1 rows affected)       <- UPDATE AccountB SET Balance = Balance + 100  [acquired after victim killed]
+Session 1 committed successfully (not the victim).
+
+--- SESSION 2 OUTPUT (DEADLOCK VICTIM) ---
+
+Changed database context to 'DeadlockDemo'.
+
+(1 rows affected)       <- UPDATE AccountB SET Balance = Balance - 200  [X-lock acquired]
+
+Msg 1205, Level 13, State 51, Server DESKTOP-JBDCVIM\SQLEXPRESS, Line 11
+Transaction (Process ID 52) was deadlocked on lock resources with another process
+and has been chosen as the deadlock victim. Rerun the transaction.
+
+================================================================================
+Session 2 (Process ID 52) received Msg 1205 — SQL Server killed it as victim.
+Session 2's AccountB update was automatically rolled back.
+Session 1 then acquired AccountB lock and committed both updates cleanly.
+================================================================================

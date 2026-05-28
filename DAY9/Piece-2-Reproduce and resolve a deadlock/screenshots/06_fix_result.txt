@@ -1,0 +1,39 @@
+================================================================================
+STEP 6 — FIX: CONSISTENT LOCK ORDER (06_fix_consistent_lock_order.sql)
+Server: DESKTOP-JBDCVIM\SQLEXPRESS   Date: 2026-05-28
+Both fix sessions run simultaneously. Initial state: AccountA=1000, AccountB=2000
+================================================================================
+
+--- FIX SESSION 2 (elapsed 5.4 s) — acquired AccountA lock first, completed first ---
+
+Changed database context to 'DeadlockDemo'.
+
+(1 rows affected)       <- UPDATE AccountA SET Balance = Balance + 200  [X-lock acquired]
+
+(1 rows affected)       <- UPDATE AccountB SET Balance = Balance - 200
+Fix Session 2 committed successfully (no deadlock).
+
+--- FIX SESSION 1 (elapsed 10.5 s) — waited ~5s for Session 2 to release AccountA, then committed ---
+
+Changed database context to 'DeadlockDemo'.
+
+(1 rows affected)       <- UPDATE AccountA SET Balance = Balance - 100  [blocked ~5s, then acquired]
+
+(1 rows affected)       <- UPDATE AccountB SET Balance = Balance + 100
+Fix Session 1 committed successfully (no deadlock).
+
+--- FINAL BALANCES (all 4 updates committed — no rollback) ---
+
+Table    Id          Balance
+-------- ----------- ------------
+AccountA           1      1100.00    (1000 + 200 - 100)
+AccountB           1      1900.00    (2000 - 200 + 100)
+
+(2 rows affected)
+
+================================================================================
+NO Msg 1205. NO DEADLOCK. Both sessions committed cleanly.
+Session 1 experienced normal blocking (waited ~5s for Session 2's AccountA lock).
+Blocking is NOT a deadlock — one session simply waits for the other to finish.
+Consistent A->B ordering breaks the circular wait condition permanently.
+================================================================================

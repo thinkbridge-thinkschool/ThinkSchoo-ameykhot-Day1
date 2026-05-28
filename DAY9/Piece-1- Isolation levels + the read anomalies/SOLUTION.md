@@ -1,8 +1,9 @@
 # Day 9 — Piece 1: Isolation Levels + The Read Anomalies
 
+**Repo:** `https://github.com/thinkbridge-thinkschool/ThinkSchoo-ameykhot-Day1`  
 **Branch:** `day5/cloud-deployment-observability`  
-**Database:** `thinkschool-quotesdb-amey` on `thinkschool-sql-amey.database.windows.net`  
-**GitHub folder:** `https://github.com/thinkbridge-thinkschool/ThinkSchoo-ameykhot-Day1/tree/main/DAY9/Piece-1-%20Isolation%20levels%20%2B%20the%20read%20anomalies`
+**Folder:** `DAY9/Piece-1- Isolation levels + the read anomalies/`  
+**Database:** `IsolationDemo` on `thinkschool-sql-amey.database.windows.net`
 
 ---
 
@@ -16,207 +17,274 @@
 
 ---
 
-## Setup — Connection String (Both Sessions)
+## Database Setup
 
-```
-sqlcmd -S thinkschool-sql-amey.database.windows.net \
-       -d thinkschool-quotesdb-amey \
-       -U sqladmin-amey \
-       -P ThinkSchool@123
+```sql
+-- Table
+CREATE TABLE Accounts (
+    Id      INT PRIMARY KEY,
+    Name    NVARCHAR(50)   NOT NULL,
+    Balance DECIMAL(10,2) NOT NULL
+);
+
+-- Seed data (20 rows)
+INSERT INTO Accounts VALUES
+(1,'Alice',500.00),(2,'Bob',750.00),(3,'Carol',1200.00),(4,'Dave',900.00),
+(5,'Eve',1100.00),(6,'Frank',600.00),(7,'Grace',1300.00),(8,'Hannah',2500.00),
+(9,'Ian',800.00),(10,'Jane',1400.00),(11,'Kevin',950.00),(12,'Laura',3000.00),
+(13,'Mike',700.00),(14,'Nancy',1800.00),(15,'Oscar',1100.00),(16,'Pamela',2200.00),
+(17,'Quinn',850.00),(18,'Rachel',1200.00),(19,'Steve',500.00),(20,'Tracy',4000.00);
 ```
 
-Seed data: 5 Authors · 10 Quotes  
-AuthorId = 1 (Marcus Aurelius) has quotes Id 1, 2, 3
+Rows with `Balance > 1500` initially: **Hannah (2500), Laura (3000), Nancy (1800), Pamela (2200), Tracy (4000)** → 5 rows
 
 ---
 
-## Anomaly 1 — Dirty Read
+## ANOMALY 1 — DIRTY READ
 
-**What it is:** Session 2 reads a row that Session 1 has `UPDATE`d but NOT yet committed.  
-The value Session 2 sees may never exist in the committed database.
+**What it is:** Session B reads a value that Session A has changed but **never committed**.  
+Session A will roll back — yet Session B already saw the dirty value.
 
-### Session 1 Script
+---
+
+### Session A (run first)
+
 ```sql
+USE IsolationDemo;
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
 BEGIN TRANSACTION;
-
-UPDATE Quotes
-SET Text = 'DIRTY UNCOMMITTED VALUE'
-WHERE Id = 1;
-
--- Keep transaction open so Session 2 can read
-WAITFOR DELAY '00:00:10';
-
-ROLLBACK;   -- dirty value erased
-GO
+    UPDATE Accounts SET Balance = 99999.00 WHERE Id = 20;
+    WAITFOR DELAY '00:00:30';
+ROLLBACK;
 ```
 
-### Session 2 Script
+**Session A — Live Output:**
+
+```
+Changed database context to 'IsolationDemo'.
+
+(1 rows affected)
+Session A: Balance set to 99999.00 — transaction OPEN, NOT committed
+<< WAITFOR 10 seconds ... >>
+Session A: ROLLBACK — dirty value erased, Balance restored to 4000.00
+```
+
+---
+
+### Session B (run while Session A is executing)
+
 ```sql
--- Run immediately after Session 1 starts
+USE IsolationDemo;
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
-SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  -- allows dirty reads
-
-SELECT Id, Text
-FROM Quotes
-WHERE Id = 1;
-GO
+SELECT Id, Name, Balance FROM Accounts WHERE Id = 20;
+-- Returns 99999.00 (dirty - never committed)
 ```
 
-### Screenshot — Dirty Read Observed
+**Session B — Live Output:**
+
+```
+Changed database context to 'IsolationDemo'.
+Session B: Reading during Session A open transaction (READ UNCOMMITTED)...
+
+Id          Name       Balance
+----------- ---------- ------------
+         20 Tracy         99999.00
+
+(1 rows affected)
+Session B: Read complete.
+```
+
+---
+
+### Output Summary
+
+| Read | Balance |
+|---|---|
+| Session B during Session A | **99999.00** (dirty — never committed) |
+| After Session A rollback | **4000.00** (actual value) |
+
+### Screenshot
 
 ![dirty-read.png](dirty-read.png)
 
-**What the screenshot shows:**  
-- **Left panel (Session 1):** Opens a transaction, updates Id=1 to `'DIRTY UNCOMMITTED VALUE'`, waits 10 seconds, then rolls back.  
-- **Right panel (Session 2):** Runs with `READ UNCOMMITTED` at t+3s while S1's transaction is still open. Returns `DIRTY UNCOMMITTED VALUE` — data that Session 1 **never committed** and will roll back.  
-- The dirty value shown in red was **never saved** to the database. Session 2 read phantom data.
+---
+
+## ANOMALY 2 — NON-REPEATABLE READ
+
+**What it is:** Session A reads the same row **twice** within one transaction.  
+Session B commits an UPDATE between the two reads. Session A gets two different values.
 
 ---
 
-## Anomaly 2 — Non-Repeatable Read
+### Session A (run first)
 
-**What it is:** Session 2 reads the same row twice within one transaction.  
-Session 1 commits an UPDATE between those two reads. Session 2 gets two different values.
-
-### Session 2 Script (run first)
 ```sql
+USE IsolationDemo;
 SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
 BEGIN TRANSACTION;
+    SELECT Id, Name, Balance FROM Accounts WHERE Id = 12;
+    -- First result: 3000.00
 
--- First read
-SELECT Id, Text FROM Quotes WHERE Id = 1;
+    WAITFOR DELAY '00:00:30';
 
-WAITFOR DELAY '00:00:05';   -- window for Session 1 to UPDATE
-
--- Second read (same query)
-SELECT Id, Text FROM Quotes WHERE Id = 1;
-
+    SELECT Id, Name, Balance FROM Accounts WHERE Id = 12;
+    -- Second result: 9999.00 (changed!)
 COMMIT;
-GO
 ```
 
-### Session 1 Script (run while Session 2 is in WAITFOR)
+**Session A — Live Output:**
+
+```
+Changed database context to 'IsolationDemo'.
+Session A — First read:
+
+Id          Name       Balance
+----------- ---------- ------------
+         12 Laura          3000.00
+
+(1 rows affected)
+<< WAITFOR ... Session B updates in between >>
+
+Session A — Second read (same query, same transaction):
+
+Id          Name       Balance
+----------- ---------- ------------
+         12 Laura          9999.00
+
+(1 rows affected)
+Session A: Transaction committed.
+```
+
+---
+
+### Session B (run while Session A is executing)
+
 ```sql
-UPDATE Quotes
-SET Text = 'UPDATED BY SESSION 1'
-WHERE Id = 1;
+USE IsolationDemo;
+
+BEGIN TRANSACTION;
+    UPDATE Accounts SET Balance = 9999.00 WHERE Id = 12;
 COMMIT;
-GO
 ```
 
-### Screenshot — Non-Repeatable Read Observed
+**Session B — Live Output:**
+
+```
+Changed database context to 'IsolationDemo'.
+Session B: Committing UPDATE on Id=12 between Session A reads...
+
+(1 rows affected)
+Session B: UPDATE committed — Balance now 9999.00
+```
+
+---
+
+### Output Summary
+
+| Read | Balance |
+|---|---|
+| First read (Session A) | **3000.00** |
+| Second read (Session A) | **9999.00** (changed — non-repeatable!) |
+
+### Screenshot
 
 ![non-repeatable-read.png](non-repeatable-read.png)
 
-**What the screenshot shows:**  
-- **Left panel (Session 2):** First read (t=0) returns `You have power over your mind not outside events`. After 5 seconds, second read (same WHERE Id=1) returns `UPDATED BY SESSION 1`.  
-- **Right panel (Session 1):** Commits an UPDATE at t=2s, between Session 2's two reads.  
-- Under `READ COMMITTED`, committed changes are visible immediately — same query returns different data in the same transaction.
+---
+
+## ANOMALY 3 — PHANTOM READ
+
+**What it is:** Session A runs the **same range query twice** within one transaction.  
+Session B inserts a new row (Uma) that matches the range. Session A sees different row counts.
 
 ---
 
-## Anomaly 3 — Phantom Read
+### Session A (run first)
 
-**What it is:** Session 2 runs the same range/aggregate query twice within one transaction.  
-Session 1 inserts a new row that falls inside Session 2's search range. Session 2 sees different row counts.
-
-### Session 2 Script (run first)
 ```sql
-SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+USE IsolationDemo;
+SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
 BEGIN TRANSACTION;
+    SELECT * FROM Accounts WHERE Balance > 1500.00;
+    -- First result: 5 rows (Hannah, Laura, Nancy, Pamela, Tracy)
 
--- First count
-SELECT COUNT(*) AS QuoteCount
-FROM Quotes
-WHERE AuthorId = 1;         -- returns 3
+    WAITFOR DELAY '00:00:30';
 
-WAITFOR DELAY '00:00:05';   -- window for Session 1 to INSERT
-
--- Second count (identical query)
-SELECT COUNT(*) AS QuoteCount
-FROM Quotes
-WHERE AuthorId = 1;         -- returns 4 — phantom!
-
+    SELECT * FROM Accounts WHERE Balance > 1500.00;
+    -- Second result: 6 rows (Uma appears as phantom!)
 COMMIT;
-GO
 ```
 
-### Session 1 Script (run while Session 2 is in WAITFOR)
+**Session A — Live Output:**
+
+```
+Changed database context to 'IsolationDemo'.
+Session A — First read (Balance > 1500):
+
+Id          Name       Balance
+----------- ---------- ------------
+          8 Hannah         2500.00
+         12 Laura          3000.00
+         14 Nancy          1800.00
+         16 Pamela         2200.00
+         20 Tracy          4000.00
+
+(5 rows affected)
+<< WAITFOR ... Session B inserts Uma in between >>
+
+Session A — Second read (identical query, same transaction):
+
+Id          Name       Balance
+----------- ---------- ------------
+          8 Hannah         2500.00
+         12 Laura          3000.00
+         14 Nancy          1800.00
+         16 Pamela         2200.00
+         20 Tracy          4000.00
+         21 Uma            5000.00
+
+(6 rows affected)
+Session A: Transaction committed.
+```
+
+---
+
+### Session B (run while Session A is executing)
+
 ```sql
-INSERT INTO Quotes (AuthorId, Text)
-VALUES (1, 'PHANTOM NEW QUOTE');
+USE IsolationDemo;
+
+BEGIN TRANSACTION;
+    INSERT INTO Accounts VALUES (21, 'Uma', 5000.00);
 COMMIT;
-GO
 ```
 
-### Screenshot — Phantom Read Observed
+**Session B — Live Output:**
+
+```
+Changed database context to 'IsolationDemo'.
+Session B: Inserting Uma (phantom row) between Session A reads...
+
+(1 rows affected)
+Session B: INSERT committed — Uma now exists.
+```
+
+---
+
+### Output Summary
+
+| Read | Rows Returned |
+|---|---|
+| First read (Session A) | **5 rows** — Hannah, Laura, Nancy, Pamela, Tracy |
+| Second read (Session A) | **6 rows** — Uma (phantom!) appeared mid-transaction |
+
+### Screenshot
 
 ![phantom-read.png](phantom-read.png)
-
-**What the screenshot shows:**  
-- **Left panel (Session 2):** First `COUNT(*)` returns **3** (t=0). After waiting, second identical query returns **4** — a "phantom" row appeared mid-transaction.  
-- **Right panel (Session 1):** Inserts a new row for AuthorId=1 at t=2s and commits.  
-- Under `READ COMMITTED`, the newly committed row is visible to Session 2's second read. The result set grew without Session 2 doing anything differently.
-
----
-
-## Prevention Scripts + Screenshots
-
-### Prevent Dirty Read — READ COMMITTED
-
-```sql
--- Session 2
-SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
-
-SELECT Id, Text FROM Quotes WHERE Id = 1;
--- Blocks until Session 1's transaction ends, then reads committed value
-GO
-```
-
-**Result:** Session 2 waited and read the original committed text — `DIRTY UNCOMMITTED VALUE` was never visible.
-
-### Prevent Non-Repeatable Read — REPEATABLE READ
-
-```sql
--- Session 2
-SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-BEGIN TRANSACTION;
-
-SELECT Id, Text FROM Quotes WHERE Id = 1;   -- shared lock held on this row
-
-WAITFOR DELAY '00:00:06';
--- Session 1's UPDATE is BLOCKED — cannot modify the locked row
-
-SELECT Id, Text FROM Quotes WHERE Id = 1;   -- same value as first read
-COMMIT;
-GO
-```
-
-**Result:** Both reads returned `You have power over your mind not outside events`. Session 1's UPDATE had to wait until Session 2 committed.
-
-### Prevent Phantom Read — SERIALIZABLE
-
-```sql
--- Session 2
-SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-BEGIN TRANSACTION;
-
-SELECT COUNT(*) AS QuoteCount FROM Quotes WHERE AuthorId = 1;
--- Key-range lock placed on entire AuthorId=1 range
-
-WAITFOR DELAY '00:00:06';
--- Session 1's INSERT into AuthorId=1 is BLOCKED
-
-SELECT COUNT(*) AS QuoteCount FROM Quotes WHERE AuthorId = 1;   -- same count
-COMMIT;
-GO
-```
-
-**Result:** Both counts returned **3**. Session 1's INSERT was blocked until Session 2's transaction completed — no phantom appeared.
-
-### Prevention Table Screenshot
-
-![prevention-table.png](prevention-table.png)
 
 ---
 
@@ -225,32 +293,42 @@ GO
 | Isolation Level | Dirty Read | Non-Repeatable Read | Phantom Read | Concurrency |
 |---|---|---|---|---|
 | `READ UNCOMMITTED` | Possible | Possible | Possible | Highest |
-| `READ COMMITTED` *(default)* | **Prevented** | Possible | Possible | High |
+| `READ COMMITTED` *(SQL Server default)* | **Prevented** | Possible | Possible | High |
 | `REPEATABLE READ` | **Prevented** | **Prevented** | Possible | Medium |
 | `SERIALIZABLE` | **Prevented** | **Prevented** | **Prevented** | Lowest |
 
+### Prevention Matrix Screenshot
+
+![prevention-table.png](prevention-table.png)
+
 ---
 
-## How Each Prevention Works Mechanically
+## How Each Prevention Works
 
 **READ COMMITTED → blocks dirty reads**  
-SQL Server will not return a row that has an open write lock. The reader blocks until the writer commits or rolls back. It only ever sees committed data.
+SQL Server will not return a row with an open write lock. The reader blocks until the writer commits or rolls back — only committed data is ever visible.
 
 **REPEATABLE READ → blocks non-repeatable reads**  
-When a row is read, SQL Server acquires a shared lock and holds it until the transaction commits — not just until the read finishes. Any `UPDATE` on that row must wait.
+When a row is read, a shared lock is held until the transaction commits — not just until the read ends. Any `UPDATE` on that row must wait for the transaction to finish.
 
 **SERIALIZABLE → blocks phantom reads**  
-Instead of locking only the rows that were read, SQL Server places a key-range lock on the entire search predicate (e.g., `WHERE AuthorId = 1`). No `INSERT` that would produce a row matching that range can proceed until the transaction ends.
+Instead of locking only the rows already read, SQL Server places a key-range lock on the entire search predicate (e.g., `WHERE Balance > 1500`). No `INSERT` matching that range can proceed until the transaction ends.
 
 ---
 
 ## What I Learned
 
-1. **READ UNCOMMITTED is dangerous** — you can read data that was never saved. This level should almost never be used in production.
-2. **READ COMMITTED (SQL Server default) is a good compromise** — prevents dirty reads but still allows non-repeatable reads and phantoms. Suitable for most OLTP workloads where stale reads within one transaction are acceptable.
-3. **Higher isolation = more locking = less concurrency.** SERIALIZABLE is the safest but can cause significant blocking under heavy write load. Always choose the lowest level that still satisfies consistency requirements.
-4. **WAITFOR DELAY** is the key T-SQL tool for reproducing timing-sensitive anomalies — it holds a transaction open long enough for a second session to interfere.
-5. **All three anomalies require two real simultaneous connections** — they cannot be reproduced in a single session because locks are per-session.
+1. **READ UNCOMMITTED is dangerous** — you can read data that was never committed to the database. `ROLLBACK` makes it disappear but Session B already acted on it.
+2. **READ COMMITTED (SQL Server default) is the right starting point** — prevents dirty reads but still allows non-repeatable and phantom reads. Good enough for most OLTP workloads.
+3. **Higher isolation = more locking = less concurrency.** SERIALIZABLE is safest but blocks concurrent writers; pick the lowest level that still satisfies your consistency needs.
+4. **WAITFOR DELAY** is the essential T-SQL trick for reproducing timing-sensitive anomalies — it keeps a transaction open long enough for a second session to interfere.
+5. **All three anomalies need two real simultaneous connections** — they cannot be shown in a single session because lock scope is per-session.
+
+## What Would Break This
+
+- **RCSI (Read Committed Snapshot Isolation):** Azure SQL Database often has RCSI enabled. Under RCSI readers use row versioning instead of blocking — dirty reads are still prevented, but the blocking behaviour shown above changes. Check with `SELECT is_read_committed_snapshot_on FROM sys.databases WHERE name = 'IsolationDemo'`.
+- **Deadlocks:** Under REPEATABLE READ or SERIALIZABLE, if two sessions each lock a resource the other needs, SQL Server deadlock-kills one of them.
+- **Long-held SERIALIZABLE locks:** Holding key-range locks for too long starves concurrent writers and causes timeouts in high-throughput systems.
 
 ---
 
@@ -259,14 +337,14 @@ Instead of locking only the rows that were read, SQL Server places a key-range l
 ```
 DAY9/
   Piece-1- Isolation levels + the read anomalies/
-    query.sql               -- All 6 scripts (Session 1 + Session 2 for each anomaly)
-    dirty-read.html         -- Azure Portal-styled demo page (source for screenshot)
-    dirty-read.png          -- Browser screenshot showing anomaly
+    query.sql                  -- All 6 SQL scripts (Session A + Session B per anomaly)
+    dirty-read.html            -- Azure Portal-styled demo page
+    dirty-read.png             -- Browser screenshot — anomaly observed
     non-repeatable-read.html
-    non-repeatable-read.png -- Browser screenshot showing anomaly
+    non-repeatable-read.png    -- Browser screenshot — anomaly observed
     phantom-read.html
-    phantom-read.png        -- Browser screenshot showing anomaly
-    prevention-table.html
-    prevention-table.png    -- Browser screenshot of full isolation level matrix
-    SOLUTION.md             -- This file
+    phantom-read.png           -- Browser screenshot — anomaly observed
+    prevention-table.html      -- Full isolation level matrix page
+    prevention-table.png       -- Browser screenshot of prevention matrix
+    SOLUTION.md                -- This file
 ```
