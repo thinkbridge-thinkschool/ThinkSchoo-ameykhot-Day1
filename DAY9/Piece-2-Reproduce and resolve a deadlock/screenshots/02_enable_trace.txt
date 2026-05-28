@@ -1,0 +1,24 @@
+================================================================================
+STEP 2 — ENABLE DEADLOCK CAPTURE (02_enable_deadlock_trace.sql)
+Server: DESKTOP-JBDCVIM\SQLEXPRESS   Date: 2026-05-28
+================================================================================
+
+Command:
+  sqlcmd -S localhost\SQLEXPRESS -E -No -i 02_enable_deadlock_trace.sql
+
+Output:
+  DBCC execution completed. If DBCC printed error messages, contact your system administrator.
+
+  TraceFlag   Status   Global   Session
+  ---------   ------   ------   -------
+       1222        1        1         0
+
+  (1 rows affected)
+  DBCC execution completed. If DBCC printed error messages, contact your system administrator.
+  Trace flag 1222 ON.  Extended Events session CaptureDeadlocks started.
+
+================================================================================
+Trace Flag 1222 : ACTIVE (Global=1)
+XE Session      : CaptureDeadlocks started (ring_buffer, max 4096 KB)
+Both mechanisms now capture deadlock graphs until disabled.
+================================================================================

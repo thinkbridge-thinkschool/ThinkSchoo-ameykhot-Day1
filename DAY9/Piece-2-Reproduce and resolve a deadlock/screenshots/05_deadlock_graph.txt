@@ -1,0 +1,63 @@
+================================================================================
+STEP 5 — DEADLOCK GRAPH (05_read_deadlock_graph.sql)
+Server: DESKTOP-JBDCVIM\SQLEXPRESS   Date: 2026-05-28 10:35:33
+Sources: Extended Events ring_buffer (Option A) + ERRORLOG TF 1222 (Option B)
+================================================================================
+
+--- Option A: Extended Events ring_buffer ---
+
+deadlock_time               victim_process_id
+--------------------------- -----------------
+2026-05-28 05:05:33         NULL
+
+(1 rows affected)
+
+  -> XE captured the deadlock event at 2026-05-28 10:35:33 (UTC: 05:05:33)
+  -> Full XML saved to deadlockgraph.xdl (open in SSMS for visual graph)
+
+--- Option B: ERRORLOG via Trace Flag 1222 ---
+
+2026-05-28 10:35:33.350  spid28s   deadlock-list
+2026-05-28 10:35:33.350  spid28s    deadlock victim=process284d1283048
+
+PROCESS LIST:
+
+  process284d1283048  (Session 2 — VICTIM, Process ID 52)
+    status      = suspended
+    waitresource= KEY: 7:72057594047234048 (8194443284a0)
+                  <- waiting for X-lock on AccountA (held by Session 1)
+    waittime    = 4285 ms
+    owns        = X-lock on AccountB
+    dbname      = DeadlockDemo
+    clientapp   = SQLCMD  hostname=DESKTOP-JBDCVIM
+    isolation   = read committed
+
+  process284d12b0088  (Session 1 — SURVIVOR)
+    status      = suspended
+    waitresource= KEY: 7:72057594047299584 (8194443284a0)
+                  <- waiting for X-lock on AccountB (held by Session 2)
+    waittime    = 4535 ms
+    owns        = X-lock on AccountA
+    dbname      = DeadlockDemo
+    clientapp   = SQLCMD  hostname=DESKTOP-JBDCVIM
+    isolation   = read committed
+
+RESOURCE LIST:
+
+  keylock  objectname=DeadlockDemo.dbo.AccountA
+           indexname =PK__AccountA__3214EC07FF1358F8
+           mode      =X
+
+  keylock  objectname=DeadlockDemo.dbo.AccountB
+           indexname =PK__AccountB__3214EC07B310455F
+           mode      =X
+
+================================================================================
+DEADLOCK CYCLE DIAGRAM:
+
+  Session 2: holds X on AccountB  ──waits──►  X on AccountA  (held by Session 1)
+  Session 1: holds X on AccountA  ──waits──►  X on AccountB  (held by Session 2)
+                       ↑──────────── circular wait ────────────↑
+
+  SQL Server chose Session 2 (process284d1283048) as victim → Msg 1205
+================================================================================

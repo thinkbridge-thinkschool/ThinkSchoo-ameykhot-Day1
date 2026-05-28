@@ -1,0 +1,28 @@
+================================================================================
+STEP 1 — SETUP (01_setup.sql)
+Server: DESKTOP-JBDCVIM\SQLEXPRESS   Date: 2026-05-28
+================================================================================
+
+Command:
+  sqlcmd -S localhost\SQLEXPRESS -E -No -i 01_setup.sql
+
+Output:
+  Changed database context to 'master'.
+  Changed database context to 'DeadlockDemo'.
+
+  (1 rows affected)
+
+  (1 rows affected)
+
+  Table      Id   Balance
+  --------   --   --------
+  AccountA    1   1000.00
+  AccountB    1   2000.00
+
+  (2 rows affected)
+
+================================================================================
+Database DeadlockDemo created.
+AccountA seeded with Balance = 1000.00
+AccountB seeded with Balance = 2000.00
+================================================================================
