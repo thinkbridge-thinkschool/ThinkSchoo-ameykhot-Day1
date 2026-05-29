@@ -1,0 +1,29 @@
+COMMAND
+-------
+bombardier -c 1 -n 30 -l http://localhost:8080/api/quotes/slow
+
+RESULT
+------
+Bombarding http://localhost:8080/api/quotes/slow with 30 request(s) using 1 connection(s)
+ 30 / 30  100.00% 3/s 7s
+Done!
+Statistics        Avg      Stdev        Max
+  Reqs/sec         3.74      12.61      91.35
+  Latency      247.56ms    44.64ms   360.54ms
+  Latency Distribution
+     50%   243.45ms      ← BEFORE p50
+     75%   268.75ms
+     90%   305.86ms
+     95%   333.05ms
+     99%   360.54ms      ← BEFORE p99
+  HTTP codes:
+    1xx - 0, 2xx - 30, 3xx - 0, 4xx - 0, 5xx - 0
+    others - 0
+  Throughput:     1.76MB/s
+
+CONTEXT
+-------
+Dataset: 50 authors × 50 quotes = 2,500 rows
+Queries per request: 51 (1 for Authors + 50 for Quotes, one per author)
+Database: SQLite (local, zero network latency)
+Note: Single-user hides the true pain — under load it gets catastrophically worse.
