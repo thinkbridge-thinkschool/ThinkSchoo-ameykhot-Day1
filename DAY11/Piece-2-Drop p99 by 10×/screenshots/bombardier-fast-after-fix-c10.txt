@@ -1,0 +1,33 @@
+COMMAND
+-------
+bombardier -c 10 -n 200 -l http://localhost:8080/api/quotes/fast
+
+RESULT
+------
+Bombarding http://localhost:8080/api/quotes/fast with 200 request(s) using 200 connection(s)
+ 200 / 200  100.00% 45/s 4s
+Done!
+Statistics        Avg      Stdev        Max
+  Reqs/sec        51.08      42.40     222.20
+  Latency      211.98ms   107.93ms   612.91ms
+  Latency Distribution
+     50%   182.87ms   (182 ms)   ← AFTER p50
+     75%   261.35ms
+     90%   372.86ms
+     95%   424.72ms
+     99%   579.76ms   (579 ms)   ← AFTER p99
+  HTTP codes:
+    1xx - 0, 2xx - 200, 3xx - 0, 4xx - 0, 5xx - 0
+    others - 0
+  Throughput:     9.52MB/s
+
+BEFORE vs AFTER COMPARISON (c=10, n=200)
+-----------------------------------------
+         BEFORE (slow)   AFTER (fast)   Improvement
+p50      1,260 ms         182 ms         6.9×
+p75      1,450 ms         261 ms         5.6×
+p90      1,690 ms         372 ms         4.5×
+p95      1,820 ms         424 ms         4.3×
+p99      3,130 ms         579 ms         5.4×
+req/s    7.21             51.08          7.1×
+SQL/req  51               2              25.5×

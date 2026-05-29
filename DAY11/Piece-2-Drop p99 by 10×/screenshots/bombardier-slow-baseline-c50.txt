@@ -1,0 +1,25 @@
+COMMAND
+-------
+bombardier -c 50 -n 500 http://localhost:8080/api/quotes/slow
+
+RESULT
+------
+Bombarding http://localhost:8080/api/quotes/slow with 500 request(s) using 50 connection(s)
+ 500 / 500  100.00% 4/s 1m41s
+Done!
+Statistics        Avg      Stdev        Max
+  Reqs/sec         5.55      48.20    1500.60
+  Latency        10.16s   130.28ms     10.60s
+  HTTP codes:
+    1xx - 0, 2xx - 0, 3xx - 0, 4xx - 0, 5xx - 0
+    others - 500
+  Errors:
+       timeout - 500
+  Throughput:     1.84KB/s
+
+INTERPRETATION
+--------------
+ALL 500 requests TIMED OUT at 10 seconds.
+The N+1 endpoint (51 SQL queries per request) is completely unusable under 50 concurrent users.
+Effective p99: > 10,000 ms (infinite from user perspective)
+Success rate: 0%

@@ -1,0 +1,27 @@
+COMMAND
+-------
+bombardier -c 10 -n 200 -l http://localhost:8080/api/quotes/slow
+
+RESULT
+------
+Bombarding http://localhost:8080/api/quotes/slow with 200 request(s) using 10 connection(s)
+ 200 / 200  100.00% 7/s 26s
+Done!
+Statistics        Avg      Stdev        Max
+  Reqs/sec         7.21      21.57     361.14
+  Latency         1.32s   371.65ms      3.86s
+  Latency Distribution
+     50%      1.26s    (1,260 ms)   ← BEFORE p50
+     75%      1.45s    (1,450 ms)
+     90%      1.69s    (1,690 ms)
+     95%      1.82s    (1,820 ms)
+     99%      3.13s    (3,130 ms)   ← BEFORE p99
+  HTTP codes:
+    1xx - 0, 2xx - 200, 3xx - 0, 4xx - 0, 5xx - 0
+    others - 0
+  Throughput:     3.28MB/s
+
+CONTEXT
+-------
+10 concurrent users × 51 SQL queries per request = 510 simultaneous queries
+SQLite serialises these → severe lock contention → p99 jumps to 3.13s

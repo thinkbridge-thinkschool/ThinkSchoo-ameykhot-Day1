@@ -1,0 +1,33 @@
+COMMAND
+-------
+bombardier -c 50 -n 500 -l http://localhost:8080/api/quotes/fast
+
+RESULT
+------
+Bombarding http://localhost:8080/api/quotes/fast with 500 request(s) using 50 connection(s)
+ 500 / 500  100.00% 38/s 12s
+Done!
+Statistics        Avg      Stdev        Max
+  Reqs/sec        41.59      94.95     837.92
+  Latency         1.27s   819.51ms      5.45s
+  Latency Distribution
+     50%      1.05s    (1,050 ms)   ← AFTER p50
+     75%      1.22s
+     90%      1.63s
+     95%      3.83s
+     99%      5.29s    (5,290 ms)   ← AFTER p99
+  HTTP codes:
+    1xx - 0, 2xx - 500, 3xx - 0, 4xx - 0, 5xx - 0
+    others - 0
+  Throughput:     8.59MB/s
+
+BEFORE vs AFTER (c=50)
+-----------------------
+BEFORE: 0 / 500 requests succeeded (all timed out)
+AFTER:  500 / 500 requests succeeded (100% success rate)
+
+BEFORE throughput:  ~1.8 KB/s (timeout responses only)
+AFTER throughput:   8.59 MB/s of real data
+
+The slow endpoint was COMPLETELY BROKEN at c=50.
+The fast endpoint handles full load with 100% success.
