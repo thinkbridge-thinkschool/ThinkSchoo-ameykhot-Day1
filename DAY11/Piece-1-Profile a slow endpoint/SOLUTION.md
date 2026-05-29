@@ -509,6 +509,6 @@ The fix is not about making each query faster — it's about reducing the query 
 
 ## GitHub
 
-**Repo:** thinkbridge-thinkschool  
-**Folder:** `DAY11/Piece-1-Profile a slow endpoint/`  
-**Branch:** day5/cloud-deployment-observability
+**Repo:** https://github.com/thinkbridge-thinkschool/ThinkSchoo-ameykhot-Day1  
+**Branch:** `Day11/slow-endpoint-analysis`  
+**Exact folder:** https://github.com/thinkbridge-thinkschool/ThinkSchoo-ameykhot-Day1/tree/Day11/slow-endpoint-analysis/DAY11/Piece-1-Profile%20a%20slow%20endpoint
