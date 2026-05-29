@@ -4,6 +4,259 @@ A modern ASP.NET Core 10 API for managing quotes and collections, built with **D
 
 ---
 
+## Day 11 – Piece 1: Profile a Slow Endpoint
+
+Performance day. Added a deliberately slow endpoint with two intentional problems — an **N+1 query pattern** and a **missing index on `AuthorId`** — then profiled it with bombardier, captured the offending SQL from App Insights, and got the SQLite execution plan. Then fixed both problems and measured the improvement.
+
+### Live Azure URL
+
+```
+https://ca-api-342m3golxdrt6.livelydune-368712a9.centralindia.azurecontainerapps.io
+```
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/quotes/slow` | Deliberately broken — N+1 + no index |
+| `GET /api/quotes/fast` | Fixed — single JOIN + index |
+
+---
+
+### What was added
+
+| File | Change |
+|---|---|
+| `Models/Author.cs` | New — `Author { Id, Name, Quotes }` entity with navigation property |
+| `Models/Quote.cs` | Added `AuthorId int?` FK column |
+| `Data/QuoteDbContext.cs` | Added `DbSet<Author>`, configured FK relationship and `IX_Quotes_AuthorId` index |
+| `Extensions/ServiceCollectionExtensions.cs` | Added slow endpoint, fast endpoint, SQL logging, and seed data |
+| `Dockerfile` | New — multi-stage .NET 10 build for Azure Container Apps |
+| `azure.yaml` | New — `azd` service definition pointing to Container App |
+| `infra/` | New — Bicep files for ACR, Container App Env, App Insights, Log Analytics |
+| `SOLUTION.md` | Full profiling write-up with p50/p99 numbers, SQL evidence, execution plans, screenshots |
+
+---
+
+### Problem 1 — N+1 Query Pattern (the slow endpoint)
+
+```csharp
+// GET /api/quotes/slow
+private static async Task<IResult> GetSlowQuotes(QuoteDbContext db)
+{
+    // Query 1 — loads ALL authors into memory
+    var authors = await db.Authors.ToListAsync();
+    var result = new List<object>();
+
+    foreach (var author in authors)
+    {
+        // Query 2..N+1 — fires one SQL query PER author
+        var quotes = await db.Quotes
+            .Where(q => q.AuthorId == author.Id)
+            .ToListAsync();
+
+        result.Add(new { author.Name, quotes });
+    }
+
+    return Results.Ok(result);
+}
+```
+
+With 10 authors → **11 SQL queries per HTTP request**.  
+With 1000 authors → 1001 queries per request. Scales linearly — a disaster in production.
+
+---
+
+### Problem 2 — Missing Index on `Quotes.AuthorId`
+
+`AuthorId` was configured as a plain column with no FK constraint and no index:
+
+```csharp
+// QuoteDbContext.OnModelCreating — original (no index)
+entity.Property(e => e.AuthorId).IsRequired(false);
+// No HasIndex() call — every WHERE AuthorId = ? runs a full table scan
+```
+
+SQLite execution plan confirmed:
+
+```
+EXPLAIN QUERY PLAN SELECT * FROM Quotes WHERE AuthorId = 1;
+
+id    parent   notused    detail
+-----------------------------------------------------------------
+2     0        0          SCAN Quotes          ← reads ALL rows
+```
+
+`SCAN Quotes` = full table scan. At 80 rows invisible. At 1 million rows → 10 million row reads per request (10 authors × 1M rows).
+
+---
+
+### SQL Logging Enabled
+
+Every EF Core query prints to the console (visible in Azure Container logs):
+
+```csharp
+services.AddDbContext<QuoteDbContext>(options => options
+    .UseSqlite(connectionString)
+    .LogTo(Console.WriteLine, LogLevel.Information)
+    .EnableSensitiveDataLogging());
+```
+
+App Insights KQL to find the offending SQL:
+
+```kusto
+dependencies
+| where timestamp > ago(2h)
+| where target contains 'quotes.db'
+| project timestamp, name, data, duration, type
+| order by timestamp desc
+| take 20
+```
+
+Result — same query repeated 10 times per single HTTP request:
+
+```
+sqlite  /tmp/quotes.db | main   0.057ms   SELECT ... FROM "Quotes" WHERE "AuthorId" = @author_Id
+sqlite  /tmp/quotes.db | main   0.054ms   SELECT ... FROM "Quotes" WHERE "AuthorId" = @author_Id
+sqlite  /tmp/quotes.db | main   0.073ms   SELECT ... FROM "Quotes" WHERE "AuthorId" = @author_Id
+... (×10 total)
+```
+
+---
+
+### Seed Data
+
+10 authors × 8 quotes = **80 rows** seeded on startup:
+
+```csharp
+var authorNames = new[] {
+    "Marcus Aurelius", "Seneca", "Epictetus", "Aristotle", "Plato",
+    "Socrates", "Friedrich Nietzsche", "Immanuel Kant", "René Descartes", "John Locke"
+};
+// Each author gets 8 quotes with AuthorId FK set
+```
+
+---
+
+### Fix 1 — Replace N+1 with Include (single JOIN)
+
+```csharp
+// GET /api/quotes/fast
+private static async Task<IResult> GetFastQuotes(QuoteDbContext db)
+{
+    // ONE query with JOIN — replaces 11 queries with 1
+    var result = await db.Authors
+        .Include(a => a.Quotes)
+        .ToListAsync();
+
+    return Results.Ok(result.Select(a => new { a.Name, quotes = a.Quotes }));
+}
+```
+
+---
+
+### Fix 2 — Add Index on `AuthorId`
+
+```csharp
+// QuoteDbContext.OnModelCreating — after fix
+entity.HasIndex(e => e.AuthorId).HasDatabaseName("IX_Quotes_AuthorId");
+entity.HasOne<Author>()
+      .WithMany(a => a.Quotes)
+      .HasForeignKey(e => e.AuthorId)
+      .IsRequired(false);
+```
+
+SQLite execution plan after index:
+
+```
+EXPLAIN QUERY PLAN SELECT * FROM Quotes WHERE AuthorId = 1;
+
+id    parent   notused    detail
+-----------------------------------------------------------------
+3     0        0          SEARCH Quotes USING INDEX IX_Quotes_AuthorId (AuthorId=?)
+```
+
+`SEARCH USING INDEX` = reads only 8 matching rows directly instead of all 80.
+
+---
+
+### Load Test Results (bombardier -c 50 -n 500)
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  BEFORE  GET /api/quotes/slow   (N+1 + no index)
+  ─────────────────────────────────────────────────
+  p50  →   464 ms
+  p99  →   950 ms
+  Reqs/sec →  105 req/s
+
+  AFTER   GET /api/quotes/fast   (Include + index)
+  ─────────────────────────────────────────────────
+  p50  →   207 ms
+  p99  →   589 ms
+  Reqs/sec →  218 req/s
+
+  IMPROVEMENT
+  ─────────────────────────────────────────────────
+  p50        →  464 / 207  =  2.2x faster
+  p99        →  950 / 589  =  1.6x faster
+  Throughput →  105 → 218  =  2x more requests/sec
+  SQL queries →   11 →  1  =  11x fewer DB queries
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+> **Note:** p99 improvement is 1.6× rather than 10×+ because SQLite lives inside the same container (zero network hop per query). On Azure SQL each N+1 round-trip adds 5–10 ms → 110 ms wasted per request → improvement would show 10×+. The **11× query reduction** is the real proof.
+
+---
+
+### bombardier Install + Commands
+
+```powershell
+# Install (no admin needed)
+Invoke-WebRequest -Uri "https://github.com/codesenberg/bombardier/releases/download/v1.2.6/bombardier-windows-amd64.exe" `
+  -OutFile "$env:USERPROFILE\tools\bombardier.exe"
+$env:PATH += ";$env:USERPROFILE\tools"
+
+# Baseline — slow endpoint
+bombardier -c 50 -n 500 -l https://<your-url>/api/quotes/slow
+
+# After fix — fast endpoint
+bombardier -c 50 -n 500 -l https://<your-url>/api/quotes/fast
+```
+
+---
+
+### Azure Deployment
+
+```powershell
+# From DAY11/Piece-1-Profile a slow endpoint/
+azd deploy --environment quotes-amey
+# SUCCESS in 2 minutes 9 seconds
+```
+
+| Resource | Name | Location |
+|---|---|---|
+| Container App | ca-api-342m3golxdrt6 | centralindia |
+| Container Registry | acr342m3golxdrt6 | centralindia |
+| App Insights | ai-342m3golxdrt6 | centralindia |
+| Log Analytics | log-342m3golxdrt6 | centralindia |
+| Container App Env | cae-342m3golxdrt6 | centralindia |
+
+---
+
+### What I Learned
+
+The N+1 problem is invisible until you read the SQL log. The endpoint returns correct data and runs in ~200ms — it looks fine. But the log reveals 11 sequential DB round-trips inside a single HTTP request. Under load these queue up behind each other and p99 spikes hard.
+
+The fix is not about making each query faster — it is about reducing 11 queries to 1 using `Include()` / JOIN. The index then makes each query itself fast. Both fixes are needed together.
+
+### What Would Break This
+
+1. **More authors** — N+1 means 1 query per author. At 1000 authors = 1001 queries per request. Completely unusable.
+2. **Container restarts** — SQLite lives at `/tmp/quotes.db` inside the container. Any restart or new deployment wipes the database. A real API needs Azure SQL or Postgres.
+
+See [SOLUTION.md](../SOLUTION.md) for the full profiling write-up including all screenshots, App Insights KQL evidence, and complete execution plans.
+
+---
+
 ## Day 5 – Piece 1: Diagnose a Slow Endpoint Using Your Traces
 
 Proved the observability pipeline works end-to-end by deliberately breaking `GET /api/quotes` and diagnosing the problem from the Jaeger trace.
