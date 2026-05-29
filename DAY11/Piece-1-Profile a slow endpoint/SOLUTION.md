@@ -1,8 +1,7 @@
 # DAY 11 — Piece 1: Profile a Slow Endpoint
 
-**Student:** Amey Khotkar  
+**Student:** Amey Khot  
 **Date:** 2026-05-29  
-**Live URL:** https://ca-api-342m3golxdrt6.livelydune-368712a9.centralindia.azurecontainerapps.io  
 **Resource Group:** rg-quotes-amey (centralindia)
 
 ---
