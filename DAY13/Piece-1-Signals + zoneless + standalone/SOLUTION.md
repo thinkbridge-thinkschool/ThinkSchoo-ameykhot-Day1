@@ -504,3 +504,10 @@ Open **http://localhost:4200**
 > Backend request was blocked (simulated connection refused). The `error` callback set `errorMessage` signal, `isLoading` set to `false`. The `@switch @case (errorMessage() !== null)` branch rendered the red error card: `Failed to load quotes: Http failure response for /api/quotes: 0 Unknown Error`. Previous quotes and stats remain visible since those signals were not cleared.
 
 ![Error card shown when backend is unreachable](screenshots/10-error-state.png)
+
+---
+
+### Screenshot 12 — Verification Log: effect() fires on every keystroke (live browser proof)
+> **This is the real manual verification screenshot.** Browser DevTools Console is open at `localhost:4200`. As the author typed search terms character by character — first `r → re → ren → rene → ...` (clearing back to empty), then `h → ha → han → hann → hanna → hannah → ...` — the `effect()` fired a new HTTP request on **every single signal change**. Each console line reads `[effect] Fetching page=1 size=10 search="..."` sourced from `app.component.ts:60`. This proves: (1) `searchTerm` is a true Angular signal — effect() tracks it automatically with no manual subscription; (2) the app is genuinely zoneless — no Zone.js patch triggered this, only the signal write from `(ngModelChange)="searchTerm.set($event)"`.
+
+![Browser DevTools Console showing effect() firing on every keystroke as search term changes character by character](screenshots/Verification%20log.png)
