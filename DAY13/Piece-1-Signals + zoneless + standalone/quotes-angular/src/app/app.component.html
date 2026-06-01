@@ -1,0 +1,131 @@
+<!-- Ambient background orbs -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="page">
+
+  <!-- ── Header ── -->
+  <header class="hero">
+    <div class="hero-badge">✦ Philosophy Collection</div>
+    <h1 class="hero-title">
+      <span class="gradient-text">Quotes</span>
+      <span class="hero-subtitle-word"> Explorer</span>
+    </h1>
+    <p class="hero-desc">Wisdom from the greatest minds across centuries</p>
+  </header>
+
+  <!-- ── Stats bar ── -->
+  @if (totalQuotes() > 0) {
+    <div class="stats-bar">
+      <div class="stat-card">
+        <span class="stat-value">{{ totalQuotes() | number }}</span>
+        <span class="stat-label">Total Quotes</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-card">
+        <span class="stat-value">{{ totalPages() | number }}</span>
+        <span class="stat-label">Total Pages</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-card">
+        <span class="stat-value">{{ pageSize() }}</span>
+        <span class="stat-label">Per Page</span>
+      </div>
+    </div>
+  }
+
+  <!-- ── Search ── -->
+  <div class="search-wrap">
+    <div class="search-box">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Search by author…"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+      />
+      @if (searchTerm()) {
+        <button class="clear-btn" (click)="searchTerm.set('')">✕</button>
+      }
+    </div>
+    <p class="summary-chip">{{ summary() }}</p>
+  </div>
+
+  <!-- ── Content ── -->
+  <main class="content">
+
+    @switch (true) {
+
+      @case (isLoading()) {
+        <div class="loader-wrap">
+          <div class="spinner"></div>
+          <p class="loader-text">Loading wisdom…</p>
+        </div>
+      }
+
+      @case (errorMessage() !== null) {
+        <div class="error-card">
+          <span class="error-icon">⚠</span>
+          <p>{{ errorMessage() }}</p>
+        </div>
+      }
+
+      @default {
+        @if (filteredQuotes().length === 0) {
+          <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <p>No quotes match your search.</p>
+          </div>
+        } @else {
+          <ul class="quotes-grid">
+            @for (quote of filteredQuotes(); track quote.id; let i = $index) {
+              <li class="quote-card" [style.animation-delay]="(i * 60) + 'ms'">
+                <span class="quote-mark">"</span>
+                <blockquote>{{ quote.text }}</blockquote>
+                <div class="card-footer">
+                  <div class="author-row">
+                    <div class="author-avatar">{{ quote.author[0] }}</div>
+                    <div>
+                      <div class="author-name">{{ quote.author }}</div>
+                      <div class="quote-date">{{ quote.createdAt | date:'MMM d, y' }}</div>
+                    </div>
+                  </div>
+                  <div class="quote-id">#{{ quote.id }}</div>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      }
+    }
+
+  </main>
+
+  <!-- ── Pagination ── -->
+  <nav class="pagination">
+    <button class="page-btn prev-btn" (click)="prevPage()" [disabled]="currentPage() === 1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+      Prev
+    </button>
+
+    <div class="page-indicator">
+      <span class="page-dot" [class.active]="currentPage() > 1"></span>
+      <div class="page-num-block">
+        <span class="page-current">{{ currentPage() }}</span>
+        <span class="page-sep">of</span>
+        <span class="page-total">{{ totalPages() }}</span>
+      </div>
+      <span class="page-dot" [class.active]="!isLastPage()"></span>
+    </div>
+
+    <button class="page-btn next-btn" (click)="nextPage()" [disabled]="isLastPage()">
+      Next
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+  </nav>
+
+</div>
