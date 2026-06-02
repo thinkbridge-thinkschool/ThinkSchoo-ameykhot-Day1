@@ -1,0 +1,170 @@
+<div class="create-panel">
+
+  <!-- ══ NOT LOGGED IN — show login prompt ══════════════════════════════ -->
+  @if (!auth.isLoggedIn()) {
+
+    <div class="panel-header">
+      <span class="panel-title">LOGIN TO ADD QUOTES</span>
+    </div>
+
+    <p class="login-hint">
+      Use the seeded account:&nbsp;
+      <code>user@test.com</code> / <code>password123</code>
+    </p>
+
+    <form (submit)="onLogin($event)" novalidate>
+
+      <div class="field-group">
+        <label class="field-label" for="login-email">Email</label>
+        <input
+          #loginEmailEl
+          id="login-email"
+          type="email"
+          class="field-input"
+          autocomplete="email"
+          [value]="loginEmailField.value()"
+          (input)="loginEmailField.value.set(loginEmailEl.value)"
+          (blur)="loginEmailField.markTouched()"
+          [disabled]="isLoggingIn()"
+          [attr.aria-invalid]="loginEmailField.touched() && loginEmailField.invalid() ? 'true' : null"
+          aria-describedby="login-email-error"
+        />
+        <span id="login-email-error" class="field-error" role="alert">
+          @if (loginEmailField.touched() && loginEmailField.error()) {
+            {{ loginEmailField.error() }}
+          }
+        </span>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="login-password">Password</label>
+        <input
+          #loginPasswordEl
+          id="login-password"
+          type="password"
+          class="field-input"
+          autocomplete="current-password"
+          [value]="loginPasswordField.value()"
+          (input)="loginPasswordField.value.set(loginPasswordEl.value)"
+          (blur)="loginPasswordField.markTouched()"
+          [disabled]="isLoggingIn()"
+          [attr.aria-invalid]="loginPasswordField.touched() && loginPasswordField.invalid() ? 'true' : null"
+          aria-describedby="login-password-error"
+        />
+        <span id="login-password-error" class="field-error" role="alert">
+          @if (loginPasswordField.touched() && loginPasswordField.error()) {
+            {{ loginPasswordField.error() }}
+          }
+        </span>
+      </div>
+
+      @if (loginError()) {
+        <div class="server-error-card" role="alert">
+          <span aria-hidden="true">⚠</span>
+          <p>{{ loginError() }}</p>
+        </div>
+      }
+
+      <button
+        type="submit"
+        class="submit-btn"
+        [disabled]="isLoggingIn()"
+        [attr.aria-busy]="isLoggingIn() ? 'true' : null"
+      >
+        {{ isLoggingIn() ? 'Logging in…' : 'Login' }}
+      </button>
+
+    </form>
+  }
+
+  <!-- ══ LOGGED IN — show create-quote form ════════════════════════════ -->
+  @if (auth.isLoggedIn()) {
+
+    <div class="panel-header">
+      <span class="panel-title">ADD QUOTE</span>
+      <button class="logout-btn" (click)="auth.logout()" title="Logout">Logout</button>
+    </div>
+
+    @if (isSuccess()) {
+      <div class="success-card" role="status" aria-live="polite">
+        <span class="success-icon" aria-hidden="true">✓</span>
+        <p>Quote created successfully!</p>
+      </div>
+    } @else {
+
+      <form (submit)="onSubmit($event)" novalidate>
+
+        <!-- Author field -->
+        <div class="field-group">
+          <label class="field-label" for="author">Author</label>
+          <input
+            #authorInput
+            id="author"
+            type="text"
+            class="field-input"
+            placeholder="e.g. Aristotle"
+            autocomplete="off"
+            [value]="authorField.value()"
+            (input)="authorField.value.set(authorInput.value)"
+            (blur)="authorField.markTouched()"
+            [disabled]="isSubmitting()"
+            [attr.aria-invalid]="authorField.touched() && authorField.invalid() ? 'true' : null"
+            aria-describedby="author-error"
+          />
+          <div class="field-footer">
+            <span id="author-error" class="field-error" role="alert">
+              @if (authorField.touched() && authorField.error()) {
+                {{ authorField.error() }}
+              }
+            </span>
+            <span class="char-count" aria-live="polite">{{ authorField.value().length }} / 200</span>
+          </div>
+        </div>
+
+        <!-- Quote text field -->
+        <div class="field-group">
+          <label class="field-label" for="text">Quote Text</label>
+          <textarea
+            #textInput
+            id="text"
+            class="field-textarea"
+            placeholder="Enter the quote text…"
+            rows="5"
+            [value]="textField.value()"
+            (input)="textField.value.set(textInput.value)"
+            (blur)="textField.markTouched()"
+            [disabled]="isSubmitting()"
+            [attr.aria-invalid]="textField.touched() && textField.invalid() ? 'true' : null"
+            aria-describedby="text-error"
+          ></textarea>
+          <div class="field-footer">
+            <span id="text-error" class="field-error" role="alert">
+              @if (textField.touched() && textField.error()) {
+                {{ textField.error() }}
+              }
+            </span>
+            <span class="char-count" aria-live="polite">{{ textField.value().length }} / 1000</span>
+          </div>
+        </div>
+
+        @if (serverError()) {
+          <div class="server-error-card" role="alert">
+            <span aria-hidden="true">⚠</span>
+            <p>{{ serverError() }}</p>
+          </div>
+        }
+
+        <button
+          type="submit"
+          class="submit-btn"
+          [disabled]="isSubmitting()"
+          [attr.aria-busy]="isSubmitting() ? 'true' : null"
+        >
+          {{ isSubmitting() ? 'Saving…' : 'Add Quote' }}
+        </button>
+
+      </form>
+    }
+  }
+
+</div>
