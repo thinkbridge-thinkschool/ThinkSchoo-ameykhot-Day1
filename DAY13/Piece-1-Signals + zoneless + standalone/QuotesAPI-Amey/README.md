@@ -4,11 +4,560 @@ A modern ASP.NET Core 10 API for managing quotes and collections, built with **D
 
 ---
 
+## Day 12 – Piece 1: Read Models + CQRS-lite
+
+Reads and writes have completely different shapes. This piece splits the quotes feature into a **write model** (normalized, validated, focused on correctness) and a **read model** (denormalized, projection-shaped for the screen). No event sourcing — just separate command and query paths inside the same ASP.NET Core project.
+
+### What CQRS-lite means here
+
+| Side | Responsibility | Key rule |
+|------|---------------|---------|
+| **Command** | Validate → write normalized entity | No reads, no projection |
+| **Query** | Join → project flat DTO → return | No validation, no entity tracking |
+
+### What was added
+
+| File | What it does |
+|------|-------------|
+| `Commands/CreateQuoteCommand.cs` | Write-side input DTO — only what a create needs: `Author`, `Text`, `AuthorId` |
+| `Commands/CreateQuoteHandler.cs` | Validates inputs, writes a normalized `Quote` entity, returns new `Id` |
+| `Queries/GetQuotesByAuthorQuery.cs` | Read-side input DTO — just `AuthorId` |
+| `Queries/GetQuotesByAuthorHandler.cs` | `AsNoTracking()` + left JOIN to Authors table → projects directly into `QuoteReadModel` |
+| `Queries/QuoteReadModel.cs` | Flat, denormalized DTO shaped for the screen — `quoteId`, `quoteText`, `authorName`, `createdAt` |
+| `Extensions/ServiceCollectionExtensions.cs` | Registered both handlers as `AddScoped<>` + wired two new Minimal API endpoints |
+
+### New endpoints
+
+| Method | Route | Handler |
+|--------|-------|---------|
+| `POST` | `/api/cqrs/quotes` | `CreateQuoteHandler` — write side |
+| `GET` | `/api/cqrs/quotes/by-author/{authorId}` | `GetQuotesByAuthorHandler` — read side |
+
+---
+
+### Command side — write path
+
+**`Commands/CreateQuoteCommand.cs`** — the input DTO:
+
+```csharp
+namespace QuotesApi.Commands;
+
+public class CreateQuoteCommand
+{
+    public string Author { get; set; } = string.Empty;
+    public string Text { get; set; } = string.Empty;
+    public int? AuthorId { get; set; }
+}
+```
+
+**`Commands/CreateQuoteHandler.cs`** — validates then writes:
+
+```csharp
+public class CreateQuoteHandler
+{
+    private readonly QuoteDbContext _context;
+
+    public CreateQuoteHandler(QuoteDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<int> Handle(CreateQuoteCommand command, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(command.Text))
+            throw new ArgumentException("Quote text is required");
+
+        if (string.IsNullOrWhiteSpace(command.Author))
+            throw new ArgumentException("Author name is required");
+
+        var quote = new Quote(command.Author, command.Text, DateTime.UtcNow);
+        quote.AuthorId = command.AuthorId;
+
+        _context.Quotes.Add(quote);
+        await _context.SaveChangesAsync(ct);
+
+        return quote.Id;
+    }
+}
+```
+
+**What the command side does:**
+- Validates inputs — throws `ArgumentException` on blank `Text` or `Author`
+- Writes a **normalized** `Quote` entity to the DB (Author name + FK `AuthorId` stored separately)
+- No read concern — no `AsNoTracking`, no projection, no joins
+- Returns only the new quote's `Id`
+
+---
+
+### Query side — read path
+
+**`Queries/QuoteReadModel.cs`** — flat DTO shaped for the screen:
+
+```csharp
+namespace QuotesApi.Queries;
+
+public class QuoteReadModel
+{
+    public int QuoteId { get; set; }
+    public string QuoteText { get; set; } = string.Empty;
+    public string AuthorName { get; set; } = string.Empty;
+    public string CreatedAt { get; set; } = string.Empty;
+}
+```
+
+**`Queries/GetQuotesByAuthorHandler.cs`** — `AsNoTracking` + JOIN → flat projection:
+
+```csharp
+public class GetQuotesByAuthorHandler
+{
+    private readonly QuoteDbContext _context;
+
+    public GetQuotesByAuthorHandler(QuoteDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<List<QuoteReadModel>> Handle(
+        GetQuotesByAuthorQuery query, CancellationToken ct = default)
+    {
+        return await (
+            from q in _context.Quotes.AsNoTracking()
+            join a in _context.Authors.AsNoTracking() on q.AuthorId equals a.Id into authorGroup
+            from a in authorGroup.DefaultIfEmpty()
+            where q.AuthorId == query.AuthorId
+            select new QuoteReadModel
+            {
+                QuoteId = q.Id,
+                QuoteText = q.Text,
+                AuthorName = a != null ? a.Name : q.Author,
+                CreatedAt = q.CreatedAt.ToString("dd MMM yyyy")
+            }
+        ).ToListAsync(ct);
+    }
+}
+```
+
+**What the query side does:**
+- `AsNoTracking()` on both sides — EF never allocates `EntityEntry` objects, zero change-tracker overhead
+- Left JOIN to `Authors` table — `AuthorName` comes from the normalized `Authors` row via FK
+- Server-side projection — the `select new QuoteReadModel` is translated to SQL; no full entity is materialized in memory
+- `CreatedAt` pre-formatted as `"dd MMM yyyy"` — the UI gets a display-ready string, no client-side parsing needed
+- No validation, no writes — the read path is pure data retrieval
+
+---
+
+### What Got Simpler
+
+> Separating read from write meant the query handler never touches EF change-tracking — `AsNoTracking()` + a single left-join projection returns a flat `QuoteReadModel` directly from SQL, with no entity-to-DTO mapping step and no validation logic leaking into the read path.
+
+**Concrete before/after:**
+
+| Mixed model (before) | Separated paths (after) |
+|---------------------|------------------------|
+| Load tracked `Quote` entity — EF allocates `EntityEntry` | Write: validate → write → done. No projection. |
+| Load tracked `Author` entity separately | Read: join → project in SQL → return flat DTO. |
+| Map entity fields into a response DTO manually | No mapping step — projection is in the handler. |
+| Validation logic sits alongside read logic | Validation only lives in the command handler. |
+
+---
+
+### How to Test the CQRS Endpoints
+
+**Start the API:**
+
+```powershell
+cd "DAY12\Piece-1-Read models + CQRS-lite\QuotesAPI-Amey"
+dotnet run --urls "http://localhost:5000"
+```
+
+**Test write endpoint (POST a quote):**
+
+```powershell
+Invoke-RestMethod -Method Post `
+  -Uri "http://localhost:5000/api/cqrs/quotes" `
+  -ContentType "application/json" `
+  -Body '{"author":"Marcus Aurelius","text":"The obstacle is the way.","authorId":1}'
+```
+
+Expected response:
+```json
+{ "id": 10001 }
+```
+
+**Test read endpoint (GET quotes by author):**
+
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/api/cqrs/quotes/by-author/1" | ConvertTo-Json
+```
+
+Expected response (one item):
+```json
+{
+  "quoteId": 1,
+  "quoteText": "The obstacle is the way. (v1)",
+  "authorName": "Marcus Aurelius",
+  "createdAt": "30 May 2026"
+}
+```
+
+**Pretty-print a single result:**
+
+```powershell
+(Invoke-RestMethod -Uri "http://localhost:5000/api/cqrs/quotes/by-author/1")[0] | ConvertTo-Json
+```
+
+---
+
+### Screenshots
+
+#### 1 — API Startup
+
+![API startup — Now listening on http://localhost:5000](../Screenshots/01-dotnet-run-startup.png)
+
+#### 2 — Write Endpoint Response (POST)
+
+![POST /api/cqrs/quotes — CreateQuoteHandler returns new id](../Screenshots/02-post-write-endpoint.png)
+
+#### 3 — Read Endpoint Response (GET)
+
+![GET /api/cqrs/quotes/by-author/1 — flat QuoteReadModel array](../Screenshots/03-get-read-endpoint.png)
+
+#### 4 — Single Read Model (pretty-printed)
+
+![Single QuoteReadModel — quoteId, quoteText, authorName, createdAt](../Screenshots/Pretty-print-just-the-first-result.png)
+
+---
+
+### What I Learned
+
+- **Commands and queries have completely different shapes.** A command needs validation and correctness guarantees; a query needs speed and the exact shape the screen expects. Forcing both through the same model means both are compromised.
+- **`AsNoTracking()` is only safe on the read side.** The command handler must use a tracked context so EF knows to generate an `INSERT`. The query handler never writes anything, so tracking is pure waste — it allocates thousands of `EntityEntry` objects for nothing at scale.
+- **The read model is shaped for the screen, not the database.** `QuoteReadModel` has `CreatedAt` as a pre-formatted string and `AuthorName` joined in — the UI receives exactly what it needs with zero extra round-trips or client-side transformations.
+- **Projection happens in SQL, not in C#.** The `select new QuoteReadModel { ... }` inside `AsNoTracking()` gets translated to a SQL SELECT with only the needed columns. No full entity row is materialized in memory.
+
+### What Would Break This
+
+1. **Removing `AsNoTracking()` from the query handler** — EF allocates an `EntityEntry` per tracked entity. At 100 quotes per author, every read request creates 100 `EntityEntry` objects, adds GC pressure, and slows throughput for zero benefit.
+2. **Adding validation logic to the query handler** — the read and write paths become entangled again; the whole point of the separation is lost.
+3. **Using a tracked entity as the read model return type** — returning the `Quote` EF entity instead of `QuoteReadModel` means EF loads every column, tracks changes, and forces the caller to do DTO mapping downstream.
+4. **Bypassing the command handler and writing directly to DbContext** — the validation (`IsNullOrWhiteSpace` checks) in `CreateQuoteHandler` is skipped entirely.
+5. **Read replica lag in a scaled CQRS setup** — if the read model is served from a read replica, a POST followed immediately by a GET could return stale data. This implementation uses the same SQLite file for both paths so it is consistent — but scaling to separate read/write stores introduces eventual consistency that clients must handle.
+
+---
+
+## Day 12 – Piece 2: When to Reach for Dapper
+
+EF Core is the default. Dapper earns its place only on hot read paths where you have **measured** a performance problem. This piece takes the existing `GetQuotesByAuthorHandler` EF query, reimplements it in Dapper with raw SQL, measures both under 10,000 rows, and derives the rule for when to drop to Dapper.
+
+### What the task asked
+
+> *"Reimplement your fastest-needed read query with Dapper, compare the SQL + timing to the EF version, and write the rule you'd give a teammate for when to drop to Dapper."*
+
+---
+
+### What Dapper Is
+
+| | EF Core | Dapper |
+|---|---|---|
+| Type | Full ORM | Micro-ORM |
+| Query style | LINQ → SQL translation | Raw SQL → C# object mapping |
+| Change tracker | Yes | No |
+| Identity map | Yes | No |
+| Migrations | Yes | No |
+| Refactoring safety | Compile-time (LINQ) | None (string SQL) |
+| Overhead | Query translation + identity map | `IDataReader` row-by-row map only |
+
+Dapper is a thin extension on `IDbConnection`. You write SQL. It reads `IDataReader` and maps column aliases to C# properties. Nothing else.
+
+---
+
+### Packages Installed
+
+```
+dotnet add package Dapper               → 2.1.79
+dotnet add package Microsoft.Data.SqlClient → 7.0.1
+```
+
+Both visible in `QuotesApi.csproj`:
+
+```xml
+<PackageReference Include="Dapper" Version="2.1.79" />
+<PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
+```
+
+---
+
+### New Files Added
+
+| File | What it does |
+|---|---|
+| `Dapper/QuoteDapperRepository.cs` | Raw SQL via `SqliteConnection`/`SqlConnection` + Stopwatch timing |
+| `Queries/GetQuotesByAuthorHandler.cs` | Updated — added `Stopwatch` to measure EF path |
+| `Extensions/ServiceCollectionExtensions.cs` | Two new endpoints + `AddScoped<QuoteDapperRepository>()` |
+
+---
+
+### 1 — EF Implementation (existing, updated with Stopwatch)
+
+**File:** `Queries/GetQuotesByAuthorHandler.cs`
+
+```csharp
+using System.Diagnostics;
+using Microsoft.EntityFrameworkCore;
+using QuotesApi.Data;
+
+namespace QuotesApi.Queries;
+
+public class GetQuotesByAuthorHandler
+{
+    private readonly QuoteDbContext _context;
+
+    public GetQuotesByAuthorHandler(QuoteDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<List<QuoteReadModel>> Handle(
+        GetQuotesByAuthorQuery query, CancellationToken ct = default)
+    {
+        var sw = Stopwatch.StartNew();
+
+        var result = await (
+            from q in _context.Quotes.AsNoTracking()
+            join a in _context.Authors.AsNoTracking() on q.AuthorId equals a.Id into authorGroup
+            from a in authorGroup.DefaultIfEmpty()
+            where q.AuthorId == query.AuthorId
+            select new QuoteReadModel
+            {
+                QuoteId = q.Id,
+                QuoteText = q.Text,
+                AuthorName = a != null ? a.Name : q.Author,
+                CreatedAt = q.CreatedAt.ToString("dd MMM yyyy")
+            }
+        ).ToListAsync(ct);
+
+        sw.Stop();
+        Console.WriteLine($"EF version: {sw.ElapsedMilliseconds}ms");
+
+        return result;
+    }
+}
+```
+
+**SQL EF Core generates internally (captured from console log):**
+
+```sql
+SELECT "q"."Id", "q"."Text",
+    CASE WHEN "a"."Id" IS NOT NULL THEN "a"."Name"
+         ELSE "q"."Author"
+    END,
+    "q"."CreatedAt"
+FROM "Quotes" AS "q"
+LEFT JOIN "Authors" AS "a" ON "q"."AuthorId" = "a"."Id"
+WHERE "q"."AuthorId" = @query_AuthorId
+```
+
+EF translates the LINQ null-safe join into a `LEFT JOIN` + `CASE WHEN`. The SQL is correct but EF also runs LINQ-to-SQL translation, maintains an identity map per request, and materialises intermediate objects before projecting to the DTO.
+
+---
+
+### 2 — Dapper Implementation (new)
+
+**File:** `Dapper/QuoteDapperRepository.cs`
+
+```csharp
+using System.Data;
+using System.Diagnostics;
+using Dapper;
+using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
+using QuotesApi.Queries;
+
+namespace QuotesApi.Dapper;
+
+public class QuoteDapperRepository
+{
+    private readonly string _connectionString;
+    private readonly bool _isSqlServer;
+
+    public QuoteDapperRepository(IConfiguration config)
+    {
+        _connectionString = config.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("DefaultConnection not found");
+        _isSqlServer = (config.GetValue<string>("DatabaseProvider") ?? "Sqlite")
+            .Equals("SqlServer", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public async Task<List<QuoteReadModel>> GetByAuthor(int authorId)
+    {
+        var sw = Stopwatch.StartNew();
+
+        IDbConnection connection;
+        string sql;
+
+        if (_isSqlServer)
+        {
+            connection = new SqlConnection(_connectionString);
+            sql = @"
+                SELECT
+                    q.Id          AS QuoteId,
+                    q.Text        AS QuoteText,
+                    a.Name        AS AuthorName,
+                    FORMAT(q.CreatedAt, 'dd MMM yyyy') AS CreatedAt
+                FROM Quotes q
+                INNER JOIN Authors a ON a.Id = q.AuthorId
+                WHERE q.AuthorId = @AuthorId";
+        }
+        else
+        {
+            connection = new SqliteConnection(_connectionString);
+            sql = @"
+                SELECT
+                    q.Id          AS QuoteId,
+                    q.Text        AS QuoteText,
+                    a.Name        AS AuthorName,
+                    q.CreatedAt   AS CreatedAt
+                FROM Quotes q
+                INNER JOIN Authors a ON a.Id = q.AuthorId
+                WHERE q.AuthorId = @AuthorId";
+        }
+
+        using (connection)
+        {
+            var result = (await connection.QueryAsync<QuoteReadModel>(
+                sql, new { AuthorId = authorId })).ToList();
+
+            sw.Stop();
+            Console.WriteLine($"Dapper version: {sw.ElapsedMilliseconds}ms");
+
+            return result;
+        }
+    }
+}
+```
+
+Dapper sends the SQL string directly to the database driver — zero translation overhead. It reads the `IDataReader` row by row and maps column aliases (`AS QuoteId`) straight onto C# properties. No change tracker, no identity map, no context session.
+
+---
+
+### 3 — New Endpoints
+
+Both endpoints return the same `QuoteReadModel` JSON shape.
+
+| Method | URL | Handler |
+|---|---|---|
+| `GET` | `/api/cqrs/quotes/ef/by-author/{authorId}` | `GetQuotesByAuthorHandler` (EF Core) |
+| `GET` | `/api/cqrs/quotes/dapper/by-author/{authorId}` | `QuoteDapperRepository` (Dapper) |
+
+**Test commands used during timing measurement:**
+
+```powershell
+curl http://localhost:5100/api/cqrs/quotes/ef/by-author/1
+curl http://localhost:5100/api/cqrs/quotes/dapper/by-author/1
+```
+
+---
+
+### 4 — DI Registration
+
+Added to `Extensions/ServiceCollectionExtensions.cs` inside `AddInfrastructure()`:
+
+```csharp
+// CQRS-lite handlers
+services.AddScoped<CreateQuoteHandler>();
+services.AddScoped<GetQuotesByAuthorHandler>();
+
+// Dapper repository
+services.AddScoped<QuoteDapperRepository>();
+```
+
+---
+
+### 5 — Timing Comparison
+
+**Dataset:** 10,000 rows — 100 authors × 100 quotes each (seeded automatically on first `dotnet run`)  
+**Database:** SQLite (default dev config)  
+**Measurement:** Single cold-start request, timing printed by `Stopwatch` to console
+
+```
+EF version:     883 ms    ← screenshot: ef-endpoint-timing.png
+Dapper version: 164 ms    ← screenshot: ef-vs-dapper-console-timing.png
+
+Dapper is 5.4× faster on this cold-start cold-context read
+```
+
+**Why the gap exists:**
+
+| Overhead | EF Core | Dapper |
+|---|---|---|
+| LINQ → SQL translation | Yes (every cold `DbContext`) | No — you write the SQL |
+| Identity map scan | Yes — tracks every entity per request | No |
+| Intermediate object materialisation | Yes — full entity first, then projected | No — maps direct to DTO |
+| Change tracker allocation | Skipped via `AsNoTracking()` | Not applicable |
+| Connection lifecycle | Managed by `DbContext` | Raw `IDbConnection`, opened on demand |
+
+Both numbers are from a single cold-start request. No warm-request measurement was taken.
+
+---
+
+### 6 — Key Behavioral Difference: LEFT JOIN vs INNER JOIN
+
+This is **not** cosmetic. EF translates the null-safe LINQ join into a `LEFT JOIN` — quotes with a `NULL AuthorId` are still returned, with `AuthorName` falling back to the `Author` string column. Dapper uses an `INNER JOIN` — those same rows are **silently dropped**.
+
+The two endpoints return identical data in this project because every seeded quote has a valid `AuthorId`. If orphan quotes existed (null `AuthorId`), EF would include them and Dapper would silently drop them without any error.
+
+| Behaviour | EF version | Dapper version |
+|---|---|---|
+| Quote with `AuthorId = NULL` | Included — `AuthorName` falls back to `q.Author` | Silently excluded |
+| Orphan detection | At runtime via CASE WHEN | None |
+
+---
+
+### 7 — One-Paragraph Rule
+
+> Use EF Core as the default for everything — writes, reads, migrations, and relationships — because it gives you type safety, change tracking, and migration tooling for free. Only reach for Dapper on **hot read paths** where you have **measured** a performance problem: queries that run thousands of times per minute, return large result sets, join many tables, or require SQL that EF translates poorly. Dapper gives you full SQL control and removes the change-tracker and query-translation overhead, but you trade away automatic migrations, refactoring safety (column renames break string SQL silently), and the ability to compose queries in C#. The rule is: **measure first, reach for Dapper only when EF is the proven bottleneck on a specific query**, not because Dapper feels faster.
+
+---
+
+### What I Learned
+
+- **Dapper is not a replacement for EF** — it is a targeted scalpel for read-heavy paths where every millisecond counts, not a general swap
+- **`AsNoTracking()` closes most of the gap** on warm second requests; the biggest win for Dapper is on the cold-start LINQ translation and identity map allocation
+- **Raw SQL is a maintenance liability** — column renames or table changes break Dapper queries silently at runtime with no compile-time warning; integration tests are the only guard
+- **LEFT JOIN vs INNER JOIN matters** — EF's null-safe LINQ join translates to `LEFT JOIN`, Dapper's explicit `INNER JOIN` silently drops orphan rows; the two endpoints are not semantically equivalent when the data has nulls
+- **Provider-aware connection factory** is needed when the same Dapper repo must work with SQLite in dev and SQL Server in prod — `DatabaseProvider` config flag drives the right `IDbConnection` subtype and SQL dialect
+
+### What Would Break This
+
+- **Column rename without updating SQL string** — Dapper maps by column alias; renaming `q.Text` to `q.Body` returns empty strings for `QuoteText` silently with no compile error
+- **Connection string missing** — `QuoteDapperRepository` throws `InvalidOperationException` at request time; EF would throw at startup via `DbContext` validation
+- **Wrong provider flag** — using `SqlConnection` against a SQLite file throws a connection error at runtime, not compile time
+- **No pagination** — both endpoints return all 100 quotes for an author; at 100,000 quotes per author this would OOM the process
+- **SQLite write contention** — SQLite holds a single write lock; under concurrent read+write load the Dapper SQLite path can see lock contention; SQL Server handles concurrent readers natively via MVCC
+- **EF LEFT JOIN vs Dapper INNER JOIN** — seeded data satisfies every join, hiding the semantic difference; inserting a quote with `AuthorId = NULL` would expose it immediately
+
+### Screenshots
+
+| File | What it shows |
+|---|---|
+| `Screenshots/dapper-added-csproj.png` | `Dapper 2.1.79` line in `.csproj` |
+| `Screenshots/sqlclient-added-csproj.png` | `Microsoft.Data.SqlClient 7.0.1` line in `.csproj` |
+| `Screenshots/ef-endpoint-timing.png` | Console output — EF SQL log + `EF version: 883ms` |
+| `Screenshots/ef-vs-dapper-console-timing.png` | Console output — `Dapper version: 164ms` |
+| `Screenshots/dapper-json-response.png` | curl JSON response from Dapper endpoint |
+
+See [SOLUTION.md](SOLUTION.md) for the full submission including all code, the timing table, and the one-paragraph rule.
+
+---
+
 ## Day 11 – Piece 1: Profile a Slow Endpoint
 
 Performance day. Added a deliberately slow endpoint with two intentional problems — an **N+1 query pattern** and a **missing index on `AuthorId`** — then profiled it with bombardier, captured the offending SQL from App Insights, and got the SQLite execution plan. Then fixed both problems and measured the improvement.
 
+### Live Azure URL
 
+```
+https://ca-api-342m3golxdrt6.livelydune-368712a9.centralindia.azurecontainerapps.io
 ```
 
 | Endpoint | Purpose |
