@@ -62,6 +62,14 @@ All screenshots captured via Playwright against the live app (`http://localhost:
 
 ---
 
+### 10. axe DevTools — Total Issues: 0
+
+axe-core 4.11.4 run against the live app at `http://localhost:4201`. Zero automatic accessibility issues detected.
+
+![axe-devtools-0-issues](screenshots/Devtool testing .png)
+
+---
+
 ## Part 1 — Brief (prompt given to the agent)
 
 **Endpoint:**
@@ -348,12 +356,13 @@ Tab → Author input → Tab → Quote Text → Tab → Add Quote button → Ent
 - `aria-describedby="text-error"` → `<span id="text-error" role="alert">` ✓
 - Focus moves to Author on submit-with-errors ✓
 
-> **Screenshot evidence for all four states:**
+> **Screenshot evidence for all states:**
 > - Empty form: [01-homepage-list.png](screenshots/01-homepage-list.png)
 > - Validation errors: [04-validation-errors.png](screenshots/04-validation-errors.png)
 > - Submitting / Saving: [06-submitting-saving.png](screenshots/06-submitting-saving.png)
 > - Server error: [08-server-error.png](screenshots/08-server-error.png)
 > - Success (form closes, quote saved): [07-success.png](screenshots/07-success.png)
+> - **axe DevTools — 0 issues:** [Devtool testing .png](screenshots/Devtool%20testing%20.png)
 
 ### Bug caught and fixed
 
