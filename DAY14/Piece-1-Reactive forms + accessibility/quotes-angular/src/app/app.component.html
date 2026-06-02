@@ -1,0 +1,35 @@
+<!-- Ambient background orbs -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="page">
+
+  <!-- Header -->
+  <header class="hero">
+    <div class="hero-badge">✦ Philosophy Collection</div>
+    <h1 class="hero-title">
+      <span class="gradient-text">Quotes</span>
+      <span class="hero-subtitle-word"> Explorer</span>
+    </h1>
+    <p class="hero-desc">Wisdom from the greatest minds across centuries</p>
+  </header>
+
+  <!-- Two-panel layout: list + detail -->
+  <div class="panels">
+    <app-quotes-list
+      class="panel-left"
+      (quoteSelected)="selectedQuoteId.set($event)"
+    />
+    <app-quote-detail
+      class="panel-right"
+      [selectedQuoteId]="selectedQuoteId()"
+    />
+  </div>
+
+  <!-- Create quote form -->
+  <section class="create-section" aria-label="Add a new quote">
+    <app-create-quote />
+  </section>
+
+</div>
