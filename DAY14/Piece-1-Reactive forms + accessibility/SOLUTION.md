@@ -364,6 +364,10 @@ Tab → Author input → Tab → Quote Text → Tab → Add Quote button → Ent
 > - Success (form closes, quote saved): [07-success.png](screenshots/07-success.png)
 > - **axe DevTools — 0 issues:** [Devtool testing .png](screenshots/Devtool%20testing%20.png)
 
+### Bug caught and fixed
+
+---
+
 ### Bug 1 — Char count never updated (zoneless + FormControl mismatch)
 
 **What the agent got wrong:** char counts used plain method calls reading `FormControl.value` directly in the template:
