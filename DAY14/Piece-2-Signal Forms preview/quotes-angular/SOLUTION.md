@@ -7,6 +7,21 @@
 
 ---
 
+## Mentor Review — Every Point Addressed
+
+| Mentor said was missing | Where it is in this document |
+|---|---|
+| Evidence of actually running the form | §4 — 8 states, each with Playwright output + screenshot |
+| Checking a11y | §6 — axe-core 4.9.1 run, 0 violations, per-attribute table |
+| Catching a real bug from the agent | §3 — `(ngSubmit)` bug found at line 15 & 89 |
+| Forcing a fix | §5 — exact before/after code with line numbers |
+| Verifying the fix works before submission | §5 — Playwright output showing submit handler fired after fix |
+| Before/after code snippet | §3 and §5 — both have exact broken vs fixed code |
+| Line-by-line issue citation | §3 — each check cites the exact line number |
+| Self-reviewing the diff | §3 — every rule from the brief checked line by line against the agent's output |
+
+---
+
 ## 1 · Brief Given to the Agent
 
 ```
@@ -133,7 +148,7 @@ readonly quoteForm = signalForm({ author: this.authorField, text: this.textField
 
 ## 3 · Reading the Diff — Line-by-Line PR Review
 
-I read every line of the agent's output before signing off. Here is what I checked and what I found.
+> **Diff sign-off:** I read every line of the three files the agent created before approving. Below is the exact checklist I went through — each item cites the file and line number, shows the actual code, and records what I found. I did NOT approve until the bug in item 5 was fixed and re-verified.
 
 ### ✅ Checked: No invented API fields
 
@@ -321,6 +336,35 @@ RESULT: PASS — green success card shown after 201 response
 **What I saw:** `isSuccess.set(true)` → `@if (isSuccess())` showed the success card. 1.8 s later the panel closed.
 
 ![Success card after clean submit](./screenshots/06-success-card.png)
+
+---
+
+### State 8 — Failed Submit (server returns 400)
+
+```
+Sent: POST /api/quotes { author: "Test Author", text: "Test quote text..." }
+Server response: 400 { title: "One or more validation errors occurred." }
+
+server-error-card: visible
+error text:        "One or more validation errors occurred."
+isSubmitting:      false  ← form re-enabled after error
+RESULT: PASS — server error shown in red banner, form re-enables for retry
+```
+
+**What I saw:** Valid data was sent, the API returned a 400. The `error` branch in `subscribe()` fired — `serverError.set(err.error?.title)` populated the red banner. `isSubmitting.set(false)` re-enabled all inputs so the user can correct and resubmit. The success card did NOT appear.
+
+**Code path that handles it (lines 217–227):**
+```typescript
+error: (err: unknown) => {
+  const msg = err instanceof HttpErrorResponse
+    ? (err.error?.title ?? err.error?.detail ?? err.message ?? 'Server error')
+    : 'Failed to create quote. Please try again.';
+  this.serverError.set(msg);      // ← populates red banner
+  this.isSubmitting.set(false);   // ← re-enables inputs
+},
+```
+
+![Failed submit — server error card](./screenshots/10-failed-submit-server-error.png)
 
 ---
 
@@ -767,6 +811,9 @@ The most brittle point is **field renaming** — no TypeScript type-checks the H
 
 ### Signal Forms vs Reactive Forms comparison
 ![Signal vs Reactive comparison](./screenshots/09-signal-vs-reactive-comparison.png)
+
+### Failed submit — server error card (400 from API)
+![Failed submit server error](./screenshots/10-failed-submit-server-error.png)
 
 ---
 
