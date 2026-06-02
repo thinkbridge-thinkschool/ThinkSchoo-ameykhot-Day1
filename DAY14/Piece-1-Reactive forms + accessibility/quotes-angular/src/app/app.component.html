@@ -13,23 +13,77 @@
       <span class="hero-subtitle-word"> Explorer</span>
     </h1>
     <p class="hero-desc">Wisdom from the greatest minds across centuries</p>
+
+    <button
+      class="add-quote-btn"
+      (click)="toggleCreate()"
+      [attr.aria-expanded]="showCreateForm()"
+      aria-controls="create-quote-section"
+    >
+      @if (showCreateForm()) {
+        <span class="btn-icon" aria-hidden="true">✕</span> Close Form
+      } @else {
+        <span class="btn-icon" aria-hidden="true">+</span> Add Quote
+      }
+    </button>
   </header>
 
-  <!-- Two-panel layout: list + detail -->
+  <!-- Main layout -->
   <div class="panels">
+
+    <!-- Left: quotes list -->
     <app-quotes-list
       class="panel-left"
-      (quoteSelected)="selectedQuoteId.set($event)"
+      (quoteSelected)="openDrawer($event)"
     />
-    <app-quote-detail
-      class="panel-right"
-      [selectedQuoteId]="selectedQuoteId()"
-    />
+
+    <!-- Right: create form (when toggled) -->
+    <div class="panel-right">
+      @if (showCreateForm()) {
+        <section id="create-quote-section" aria-label="Add a new quote">
+          <app-create-quote (closed)="onFormClosed()" />
+        </section>
+      } @else {
+        <div class="right-hint">
+          <span class="hint-icon" aria-hidden="true">👈</span>
+          <p>Select a quote to view details</p>
+        </div>
+      }
+    </div>
+
   </div>
 
-  <!-- Create quote form -->
-  <section class="create-section" aria-label="Add a new quote">
-    <app-create-quote />
-  </section>
-
 </div>
+
+<!-- ── Backdrop ── -->
+<div
+  class="drawer-backdrop"
+  [class.drawer-backdrop--visible]="drawerOpen()"
+  (click)="closeDrawer()"
+  aria-hidden="true"
+></div>
+
+<!-- ── Sliding drawer ── -->
+<aside
+  class="drawer"
+  [class.drawer--open]="drawerOpen()"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Quote detail"
+  [attr.aria-hidden]="!drawerOpen()"
+>
+  <div class="drawer-header">
+    <span class="drawer-title">QUOTE DETAIL</span>
+    <button
+      class="drawer-close-btn"
+      (click)="closeDrawer()"
+      aria-label="Close quote detail"
+    >
+      ✕
+    </button>
+  </div>
+
+  <div class="drawer-body">
+    <app-quote-detail [selectedQuoteId]="selectedQuoteId()" />
+  </div>
+</aside>

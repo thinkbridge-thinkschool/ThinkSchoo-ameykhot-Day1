@@ -105,15 +105,53 @@
   animation: fadeUp 0.6s 0.15s ease both;
 }
 
+/* Left / right sizing wrappers */
 .panel-left,
 .panel-right {
   display: block;
 }
 
+/* ── Add Quote toggle button (in hero) ── */
+.add-quote-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 1.5rem;
+  padding: 0.6rem 1.5rem;
+  border-radius: 50px;
+  border: 1px solid rgba(245,158,11,0.45);
+  background: rgba(245,158,11,0.1);
+  color: var(--gold);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+.add-quote-btn:hover {
+  background: rgba(245,158,11,0.2);
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+.add-quote-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+.btn-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
 /* ── Create section ── */
 .create-section {
   margin-top: 2rem;
-  animation: fadeUp 0.6s 0.25s ease both;
+  animation: slideDown 0.35s ease both;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ── Keyframe animations ── */
@@ -127,6 +165,117 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Right panel empty hint ── */
+.right-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  height: 100%;
+  min-height: 400px;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(16px);
+}
+.hint-icon { font-size: 2rem; }
+
+/* ── Drawer backdrop ── */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+  z-index: 50;
+}
+.drawer-backdrop--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Sliding drawer ── */
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(500px, 90vw);
+  height: 100vh;
+  background: #0d1126;
+  border-left: 1px solid var(--border);
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5);
+  transform: translateX(100%);
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 51;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.drawer--open {
+  transform: translateX(0);
+}
+
+/* Drawer header */
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.03);
+}
+.drawer-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.drawer-close-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+.drawer-close-btn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.drawer-close-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* Drawer body — scrollable content */
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+/* The detail-panel card inside the drawer should be flat — no double border */
+.drawer-body .detail-panel {
+  background: transparent;
+  border: none;
+  backdrop-filter: none;
+  padding: 0;
+  min-height: unset;
+}
+
 @media (max-width: 900px) {
   .panels { grid-template-columns: 1fr; }
+  .drawer { width: 100vw; }
 }

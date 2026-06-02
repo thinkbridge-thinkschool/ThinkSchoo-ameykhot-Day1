@@ -1,93 +1,157 @@
 <div class="create-panel">
 
-  <div class="panel-header">
-    <span class="panel-title">ADD QUOTE</span>
-  </div>
+  <!-- ══ NOT LOGGED IN — show login prompt ══════════════════════════════ -->
+  @if (!auth.isLoggedIn()) {
 
-  @if (isSuccess()) {
-    <div class="success-card" role="status" aria-live="polite">
-      <span class="success-icon" aria-hidden="true">✓</span>
-      <p>Quote created successfully!</p>
-      <button class="action-btn" (click)="resetSuccess()">Add another</button>
+    <div class="panel-header">
+      <span class="panel-title">LOGIN TO ADD QUOTES</span>
     </div>
-  } @else {
 
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+    <p class="login-hint">
+      Use the seeded account:&nbsp;
+      <code>user@test.com</code> / <code>password123</code>
+    </p>
 
-      <!-- ── Author field ── -->
+    <form [formGroup]="loginForm" (ngSubmit)="onLogin()" novalidate>
+
       <div class="field-group">
-        <label class="field-label" for="author">Author</label>
+        <label class="field-label" for="login-email">Email</label>
         <input
-          #authorInput
-          id="author"
-          type="text"
+          id="login-email"
+          type="email"
           class="field-input"
-          formControlName="author"
-          placeholder="e.g. Aristotle"
-          autocomplete="off"
-          [attr.aria-invalid]="authorCtrl.touched && authorCtrl.invalid ? 'true' : null"
-          aria-describedby="author-error"
+          formControlName="email"
+          autocomplete="email"
+          [attr.aria-invalid]="emailCtrl.touched && emailCtrl.invalid ? 'true' : null"
+          aria-describedby="login-email-error"
         />
-        <div class="field-footer">
-          <span id="author-error" class="field-error" role="alert">
-            @if (authorCtrl.touched && authorCtrl.hasError('required')) {
-              Author is required
-            } @else if (authorCtrl.touched && authorCtrl.hasError('maxlength')) {
-              Author must be 200 characters or less
-            }
-          </span>
-          <span class="char-count" aria-live="polite">
-            {{ authorLength() }} / 200 characters
-          </span>
-        </div>
+        <span id="login-email-error" class="field-error" role="alert">
+          @if (emailCtrl.touched && emailCtrl.hasError('required')) { Email is required }
+          @else if (emailCtrl.touched && emailCtrl.hasError('email')) { Enter a valid email }
+        </span>
       </div>
 
-      <!-- ── Quote text field ── -->
       <div class="field-group">
-        <label class="field-label" for="text">Quote Text</label>
-        <textarea
-          #textInput
-          id="text"
-          class="field-textarea"
-          formControlName="text"
-          placeholder="Enter the quote text…"
-          rows="5"
-          [attr.aria-invalid]="textCtrl.touched && textCtrl.invalid ? 'true' : null"
-          aria-describedby="text-error"
-        ></textarea>
-        <div class="field-footer">
-          <span id="text-error" class="field-error" role="alert">
-            @if (textCtrl.touched && textCtrl.hasError('required')) {
-              Quote text is required
-            } @else if (textCtrl.touched && textCtrl.hasError('maxlength')) {
-              Quote text must be 1000 characters or less
-            }
-          </span>
-          <span class="char-count" aria-live="polite">
-            {{ textLength() }} / 1000 characters
-          </span>
-        </div>
+        <label class="field-label" for="login-password">Password</label>
+        <input
+          id="login-password"
+          type="password"
+          class="field-input"
+          formControlName="password"
+          autocomplete="current-password"
+          [attr.aria-invalid]="passwordCtrl.touched && passwordCtrl.invalid ? 'true' : null"
+          aria-describedby="login-password-error"
+        />
+        <span id="login-password-error" class="field-error" role="alert">
+          @if (passwordCtrl.touched && passwordCtrl.hasError('required')) { Password is required }
+        </span>
       </div>
 
-      <!-- ── Server error ── -->
-      @if (serverError()) {
+      @if (loginError()) {
         <div class="server-error-card" role="alert">
-          <span class="error-icon" aria-hidden="true">⚠</span>
-          <p>{{ serverError() }}</p>
+          <span aria-hidden="true">⚠</span>
+          <p>{{ loginError() }}</p>
         </div>
       }
 
-      <!-- ── Submit ── -->
       <button
         type="submit"
         class="submit-btn"
-        [disabled]="isSubmitting()"
-        [attr.aria-busy]="isSubmitting() ? 'true' : null"
+        [disabled]="isLoggingIn()"
+        [attr.aria-busy]="isLoggingIn() ? 'true' : null"
       >
-        {{ isSubmitting() ? 'Saving…' : 'Add Quote' }}
+        {{ isLoggingIn() ? 'Logging in…' : 'Login' }}
       </button>
 
     </form>
+  }
+
+  <!-- ══ LOGGED IN — show create-quote form ════════════════════════════ -->
+  @if (auth.isLoggedIn()) {
+
+    <div class="panel-header">
+      <span class="panel-title">ADD QUOTE</span>
+      <button class="logout-btn" (click)="auth.logout()" title="Logout">Logout</button>
+    </div>
+
+    @if (isSuccess()) {
+      <div class="success-card" role="status" aria-live="polite">
+        <span class="success-icon" aria-hidden="true">✓</span>
+        <p>Quote created successfully!</p>
+      </div>
+    } @else {
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+        <!-- Author field -->
+        <div class="field-group">
+          <label class="field-label" for="author">Author</label>
+          <input
+            #authorInput
+            id="author"
+            type="text"
+            class="field-input"
+            formControlName="author"
+            placeholder="e.g. Aristotle"
+            autocomplete="off"
+            [attr.aria-invalid]="authorCtrl.touched && authorCtrl.invalid ? 'true' : null"
+            aria-describedby="author-error"
+          />
+          <div class="field-footer">
+            <span id="author-error" class="field-error" role="alert">
+              @if (authorCtrl.touched && authorCtrl.hasError('required')) {
+                Author is required
+              } @else if (authorCtrl.touched && authorCtrl.hasError('maxlength')) {
+                Author must be 200 characters or less
+              }
+            </span>
+            <span class="char-count" aria-live="polite">{{ authorLength() }} / 200</span>
+          </div>
+        </div>
+
+        <!-- Quote text field -->
+        <div class="field-group">
+          <label class="field-label" for="text">Quote Text</label>
+          <textarea
+            #textInput
+            id="text"
+            class="field-textarea"
+            formControlName="text"
+            placeholder="Enter the quote text…"
+            rows="5"
+            [attr.aria-invalid]="textCtrl.touched && textCtrl.invalid ? 'true' : null"
+            aria-describedby="text-error"
+          ></textarea>
+          <div class="field-footer">
+            <span id="text-error" class="field-error" role="alert">
+              @if (textCtrl.touched && textCtrl.hasError('required')) {
+                Quote text is required
+              } @else if (textCtrl.touched && textCtrl.hasError('maxlength')) {
+                Quote text must be 1000 characters or less
+              }
+            </span>
+            <span class="char-count" aria-live="polite">{{ textLength() }} / 1000</span>
+          </div>
+        </div>
+
+        @if (serverError()) {
+          <div class="server-error-card" role="alert">
+            <span aria-hidden="true">⚠</span>
+            <p>{{ serverError() }}</p>
+          </div>
+        }
+
+        <button
+          type="submit"
+          class="submit-btn"
+          [disabled]="isSubmitting()"
+          [attr.aria-busy]="isSubmitting() ? 'true' : null"
+        >
+          {{ isSubmitting() ? 'Saving…' : 'Add Quote' }}
+        </button>
+
+      </form>
+    }
   }
 
 </div>

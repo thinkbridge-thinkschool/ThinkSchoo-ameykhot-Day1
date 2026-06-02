@@ -12,4 +12,23 @@ import { CreateQuoteComponent } from './create-quote/create-quote.component';
 })
 export class AppComponent {
   selectedQuoteId = signal<number | null>(null);
+  showCreateForm  = signal(false);
+  drawerOpen      = signal(false);
+
+  openDrawer(id: number): void {
+    this.selectedQuoteId.set(id);
+    this.drawerOpen.set(true);
+  }
+
+  closeDrawer(): void {
+    this.drawerOpen.set(false);
+  }
+
+  toggleCreate(): void {
+    this.showCreateForm.update(v => !v);
+  }
+
+  onFormClosed(): void {
+    this.showCreateForm.set(false);
+  }
 }
