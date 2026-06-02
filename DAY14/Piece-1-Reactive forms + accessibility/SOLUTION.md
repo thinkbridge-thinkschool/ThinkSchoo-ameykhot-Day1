@@ -364,7 +364,7 @@ Tab → Author input → Tab → Quote Text → Tab → Add Quote button → Ent
 > - Success (form closes, quote saved): [07-success.png](screenshots/07-success.png)
 > - **axe DevTools — 0 issues:** [Devtool testing .png](screenshots/Devtool%20testing%20.png)
 
-### Bug caught and fixed
+### Bug 1 — Char count never updated (zoneless + FormControl mismatch)
 
 **What the agent got wrong:** char counts used plain method calls reading `FormControl.value` directly in the template:
 
@@ -386,6 +386,72 @@ readonly authorLength = toSignal(
 ```
 
 `toSignal` wraps the `valueChanges` Observable as an Angular signal. The template reads `authorLength()` — a real signal — so the zoneless scheduler re-renders on every keystroke.
+
+---
+
+### Bug 2 — POST /api/quotes returned 401 Unauthorized silently
+
+**What the agent got wrong:** the agent wired `createQuote()` in the service but never handled authentication. Submitting the form hit the API and got back `401 Unauthorized` — the error banner showed a raw HTTP URL as the message, which is meaningless to a user:
+
+```
+Http failure response for http://localhost:4201/api/quotes: 401 Unauthorized
+```
+
+The agent assumed the endpoint was public. It is not — `POST /api/quotes` requires `.RequireAuthorization("can-edit-quotes")` with a JWT Bearer token carrying `scope=quotes.write`.
+
+**Fix applied:** added two new files:
+
+```typescript
+// auth.service.ts — login, store token in localStorage, expose as signal
+login(email: string, password: string): Observable<LoginResponse> {
+  return this.http.post<LoginResponse>('/api/auth/login', { email, password }).pipe(
+    tap(res => {
+      localStorage.setItem(this.TOKEN_KEY, res.access_token);
+      this.token.set(res.access_token);
+    })
+  );
+}
+```
+
+```typescript
+// auth.interceptor.ts — attach Bearer token to every outgoing request
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const token = inject(AuthService).token();
+  const authReq = token
+    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+    : req;
+  return next(authReq).pipe(
+    catchError(err => {
+      if (err instanceof HttpErrorResponse && err.status === 401) auth.logout();
+      return throwError(() => err);
+    })
+  );
+};
+```
+
+The create-quote panel now shows a login form first. After login the JWT is stored and every subsequent POST carries the token automatically. If the token expires mid-session, the interceptor catches the 401, clears the token, and the panel reverts to the login state.
+
+---
+
+### Bug 3 — Search returned "contains" matches instead of "starts with"
+
+**What the agent got wrong:** the API's search filtered authors using `.Contains()`:
+
+```csharp
+// IQuoteRepository.cs — original, broken for prefix search
+query = query.Where(q => q.Author.ToLower().Contains(search.ToLower()));
+```
+
+Typing `"A"` returned every author with the letter A anywhere in their name — "Marcus **A**urelius", "Thom**a**s Hobbes", "Ren**é** Desc**a**rtes" — 50+ results instead of just authors whose name starts with A.
+
+**Fix applied:** one character change in the repository:
+
+```csharp
+// IQuoteRepository.cs — fixed
+query = query.Where(q => q.Author.ToLower().StartsWith(search.ToLower()));
+```
+
+Now typing `"A"` returns only Aristotle, Anselm, Averroes, Augustine — authors whose name genuinely starts with A. Typing `"Am"` narrows to Ambrose. The search behaves like a name lookup, not a full-text scan.
 
 ### What breaks this form if the contract changes
 
