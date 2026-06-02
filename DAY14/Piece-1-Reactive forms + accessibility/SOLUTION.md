@@ -6,17 +6,59 @@
 
 All screenshots captured via Playwright against the live app (`http://localhost:4201`) with the real API (`http://localhost:5051`) running.
 
-| # | File | What it proves |
-|---|------|---------------|
-| 1 | [01-homepage-list.png](screenshots/01-homepage-list.png) | App loads, quotes list visible, no form shown |
-| 2 | [02-add-quote-login-form.png](screenshots/02-add-quote-login-form.png) | Click "+ Add Quote" → login form appears in right panel |
-| 3 | [03-after-login-create-form.png](screenshots/03-after-login-create-form.png) | After login → create form shown with Author + Quote Text fields |
-| 4 | [04-validation-errors.png](screenshots/04-validation-errors.png) | **Invalid state** — submit empty → "Author is required" + "Quote text is required" + red borders |
-| 5 | [05-form-filled.png](screenshots/05-form-filled.png) | Form filled with valid data, char counts updating (4/200, 28/1000) |
-| 6 | [06-submitting-saving.png](screenshots/06-submitting-saving.png) | **Submitting state** — button shows "Saving…", fields disabled |
-| 7 | [07-success.png](screenshots/07-success.png) | **Success state** — form closed, quote added, list resets to "+ Add Quote" |
-| 8 | [08-server-error.png](screenshots/08-server-error.png) | **Server-error state** — red "Internal Server Error" banner, form re-enabled for retry |
-| 9 | [09-quote-detail-drawer.png](screenshots/09-quote-detail-drawer.png) | Click a quote → drawer slides in from right with detail + ✕ close button |
+---
+
+### 1. Homepage — app loads, quotes list visible
+
+![01-homepage-list](screenshots/01-homepage-list.png)
+
+---
+
+### 2. Click "+ Add Quote" — login form appears in right panel
+
+![02-add-quote-login-form](screenshots/02-add-quote-login-form.png)
+
+---
+
+### 3. After login — create form shown with Author + Quote Text fields
+
+![03-after-login-create-form](screenshots/03-after-login-create-form.png)
+
+---
+
+### 4. Invalid state — submit empty → both "required" errors + red borders
+
+![04-validation-errors](screenshots/04-validation-errors.png)
+
+---
+
+### 5. Form filled — valid data, char counts live (4/200, 28/1000)
+
+![05-form-filled](screenshots/05-form-filled.png)
+
+---
+
+### 6. Submitting state — button shows "Saving…", fields disabled
+
+![06-submitting-saving](screenshots/06-submitting-saving.png)
+
+---
+
+### 7. Success state — quote saved, form closes, list resets
+
+![07-success](screenshots/07-success.png)
+
+---
+
+### 8. Server-error state — red banner, form re-enabled for retry
+
+![08-server-error](screenshots/08-server-error.png)
+
+---
+
+### 9. Quote detail drawer — slides in from right on quote click
+
+![09-quote-detail-drawer](screenshots/09-quote-detail-drawer.png)
 
 ---
 
