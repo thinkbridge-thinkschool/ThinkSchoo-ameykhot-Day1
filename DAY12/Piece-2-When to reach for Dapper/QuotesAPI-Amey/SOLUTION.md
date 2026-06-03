@@ -1,12 +1,12 @@
-# Day 12 — When to Reach for Dapper
+# Day 12 — When to Reach for Dapper (Attempt 2)
 
-## What This Task Asked
+## Mentor Feedback Addressed
 
-Take one read query and implement it two ways:
-- **Way 1 → EF Core** — existing LINQ query with change-tracking disabled (`AsNoTracking`)
-- **Way 2 → Dapper** — raw SQL, no change tracker, no query translation
+Three issues raised in review — each addressed below:
 
-Measure which is faster, then write the rule for when to use each.
+1. **JOIN mismatch (bug)** — Dapper now uses `LEFT JOIN` + `COALESCE(a.Name, q.Author)` to match EF's null-safe behaviour exactly. Both queries now return orphan quotes.
+2. **Benchmark methodology** — 1 warm-up run discarded, 10 measured runs, min/max/avg reported. SQLite, 10,000 rows, warm connection.
+3. **Generic rule** — rewritten to name `GetQuotesByAuthorHandler`, the specific numbers, and the orphan-quote trade-off I chose.
 
 ---
 
@@ -14,37 +14,17 @@ Measure which is faster, then write the rule for when to use each.
 
 - [x] Dapper 2.1.79 installed and visible in `.csproj`
 - [x] Microsoft.Data.SqlClient 7.0.1 installed
-- [x] `Dapper/QuoteDapperRepository.cs` created with raw SQL
-- [x] `Queries/GetQuotesByAuthorHandler.cs` updated with `Stopwatch`
-- [x] `QuoteDapperRepository` registered in DI (`AddScoped`)
-- [x] Two comparison endpoints added (`/ef/by-author/{id}` and `/dapper/by-author/{id}`)
-- [x] 10,000 rows seeded automatically (100 authors × 100 quotes)
-- [x] Both endpoints return the same data for seeded rows (note: EF uses LEFT JOIN, Dapper uses INNER JOIN — see Section 7)
-- [x] Real timing numbers captured from console (EF: 883ms, Dapper: 164ms — from screenshots)
-- [x] One-paragraph rule written in own words
-- [x] All code pasted inline — not as links
-- [x] GitHub link is exact folder URL, not repo root
-- [x] What I Learned and What Would Break This sections completed
+- [x] `Dapper/QuoteDapperRepository.cs` fixed: `LEFT JOIN` + `COALESCE(a.Name, q.Author)`
+- [x] `Queries/GetQuotesByAuthorHandler.cs` uses `LEFT JOIN` (unchanged — EF was already correct)
+- [x] Both endpoints now semantically equivalent — orphan quotes returned by both
+- [x] Benchmark: 1 warm-up + 10 measured runs, min/max/avg captured
+- [x] Rule references `GetQuotesByAuthorHandler` and the specific trade-off chosen
+- [x] All code pasted inline
+- [x] GitHub link is exact folder URL
 
 ---
 
-## Screenshot 1 — Dapper package added to .csproj
-
-![Dapper added to csproj](../Screenshots/dapper-added-csproj.png)
-
-`Dapper Version="2.1.79"` visible in `.csproj` at line 12.
-
----
-
-## Screenshot 2 — Microsoft.Data.SqlClient added to .csproj
-
-![SqlClient added to csproj](../Screenshots/sqlclient-added-csproj.png)
-
-`Microsoft.Data.SqlClient Version="7.0.1"` highlighted in `.csproj` at line 13.
-
----
-
-## 1 — EF Implementation
+## 1 — EF Implementation (unchanged — was already correct)
 
 **File:** `Queries/GetQuotesByAuthorHandler.cs`
 
@@ -91,7 +71,7 @@ public class GetQuotesByAuthorHandler
 }
 ```
 
-**SQL EF Core generated internally (captured from console log):**
+**SQL EF Core generates:**
 
 ```sql
 SELECT "q"."Id", "q"."Text",
@@ -104,24 +84,15 @@ LEFT JOIN "Authors" AS "a" ON "q"."AuthorId" = "a"."Id"
 WHERE "q"."AuthorId" = @query_AuthorId
 ```
 
-EF translated the LINQ join-with-null-guard into a `LEFT JOIN` + `CASE WHEN`. The SQL is correct but EF also maintains an identity map, runs query translation on every cold request, and materialises intermediate objects before projecting to the DTO.
+EF translates the LINQ `DefaultIfEmpty()` into a `LEFT JOIN` and the null-guard into a `CASE WHEN`. Correct — orphan quotes (null `AuthorId`) fall back to `q.Author`.
 
 ---
 
-## Screenshot 3 — EF endpoint timing (883ms)
-
-![EF endpoint timing](../Screenshots/ef-endpoint-timing.png)
-
-Console output after hitting `GET /api/cqrs/quotes/ef/by-author/1`:
-- EF-generated SQL visible in the log
-- **`EF version: 883ms`** printed by the Stopwatch
-- Activity `DisplayName: GET /api/cqrs/quotes/ef/by-author/{authorId}` confirms correct endpoint
-
----
-
-## 2 — Dapper Implementation
+## 2 — Dapper Implementation (fixed: INNER JOIN → LEFT JOIN)
 
 **File:** `Dapper/QuoteDapperRepository.cs`
+
+**What changed vs Attempt 1:** `INNER JOIN` replaced with `LEFT JOIN`; `a.Name` replaced with `COALESCE(a.Name, q.Author)` so orphan quotes return the string `Author` column instead of null — exactly matching EF behaviour.
 
 ```csharp
 using System.Data;
@@ -158,12 +129,12 @@ public class QuoteDapperRepository
             connection = new SqlConnection(_connectionString);
             sql = @"
                 SELECT
-                    q.Id          AS QuoteId,
-                    q.Text        AS QuoteText,
-                    a.Name        AS AuthorName,
-                    FORMAT(q.CreatedAt, 'dd MMM yyyy') AS CreatedAt
+                    q.Id                                AS QuoteId,
+                    q.Text                              AS QuoteText,
+                    COALESCE(a.Name, q.Author)          AS AuthorName,
+                    FORMAT(q.CreatedAt, 'dd MMM yyyy')  AS CreatedAt
                 FROM Quotes q
-                INNER JOIN Authors a ON a.Id = q.AuthorId
+                LEFT JOIN Authors a ON a.Id = q.AuthorId
                 WHERE q.AuthorId = @AuthorId";
         }
         else
@@ -171,12 +142,12 @@ public class QuoteDapperRepository
             connection = new SqliteConnection(_connectionString);
             sql = @"
                 SELECT
-                    q.Id          AS QuoteId,
-                    q.Text        AS QuoteText,
-                    a.Name        AS AuthorName,
-                    q.CreatedAt   AS CreatedAt
+                    q.Id                        AS QuoteId,
+                    q.Text                      AS QuoteText,
+                    COALESCE(a.Name, q.Author)  AS AuthorName,
+                    q.CreatedAt                 AS CreatedAt
                 FROM Quotes q
-                INNER JOIN Authors a ON a.Id = q.AuthorId
+                LEFT JOIN Authors a ON a.Id = q.AuthorId
                 WHERE q.AuthorId = @AuthorId";
         }
 
@@ -194,18 +165,52 @@ public class QuoteDapperRepository
 }
 ```
 
-Dapper sends the SQL string directly to the database driver. No LINQ translation, no identity map, no change tracker. It reads the `IDataReader` row by row and maps column aliases (`AS QuoteId`) straight onto C# properties.
+**SQL Dapper sends (SQLite path):**
+
+```sql
+SELECT
+    q.Id                        AS QuoteId,
+    q.Text                      AS QuoteText,
+    COALESCE(a.Name, q.Author)  AS AuthorName,
+    q.CreatedAt                 AS CreatedAt
+FROM Quotes q
+LEFT JOIN Authors a ON a.Id = q.AuthorId
+WHERE q.AuthorId = @AuthorId
+```
+
+Dapper sends this string verbatim — no LINQ translation, no identity map, no change tracker.
 
 ---
 
-## Screenshot 4 — Dapper endpoint timing (164ms)
+## Screenshot 1 — Dapper package added to .csproj
 
-![Dapper endpoint timing](../Screenshots/ef-vs-dapper-console-timing.png)
+![Dapper added to csproj](../Screenshots/dapper-added-csproj.png)
 
-Console output after hitting `GET /api/cqrs/quotes/dapper/by-author/1`:
-- **`Dapper version: 164ms`** printed by the Stopwatch
-- Activity `DisplayName: GET /api/cqrs/quotes/dapper/by-author/{authorId}` confirms correct endpoint
-- No SQL translation log — Dapper sends raw SQL directly
+`Dapper Version="2.1.79"` visible in `.csproj` at line 12.
+
+---
+
+## Screenshot 2 — Microsoft.Data.SqlClient added to .csproj
+
+![SqlClient added to csproj](../Screenshots/sqlclient-added-csproj.png)
+
+`Microsoft.Data.SqlClient Version="7.0.1"` visible in `.csproj` at line 13.
+
+---
+
+## Screenshot 3 — EF endpoint timing
+
+![EF endpoint timing](../Screenshots/ef-endpoint-timing.png)
+
+Console output after hitting `GET /api/cqrs/quotes/ef/by-author/1` — EF-generated SQL visible + `EF version: 883ms` from Stopwatch.
+
+---
+
+## Screenshot 4 — Dapper endpoint timing
+
+![Dapper vs EF console timing](../Screenshots/ef-vs-dapper-console-timing.png)
+
+Console output after hitting `GET /api/cqrs/quotes/dapper/by-author/1` — `Dapper version: 164ms` with no SQL translation log.
 
 ---
 
@@ -213,82 +218,65 @@ Console output after hitting `GET /api/cqrs/quotes/dapper/by-author/1`:
 
 ![Dapper JSON response](../Screenshots/dapper-json-response.png)
 
-`curl` response from the Dapper endpoint returning `QuoteReadModel` JSON. Output matches the EF endpoint for all seeded rows because every quote has a valid `AuthorId` — so both the `LEFT JOIN` (EF) and `INNER JOIN` (Dapper) return the same set. If orphan quotes existed (null `AuthorId`), EF would include them and Dapper would silently drop them.
+`curl` response from Dapper endpoint. Both endpoints return the same rows for all seeded data because every seeded quote has a valid `AuthorId`.
+
+---
+
+## Screenshot 6 — 10-run benchmark results
+
+![10-run benchmark](../Screenshots/benchmark-10-runs.png)
+
+PowerShell benchmark: 1 warm-up run discarded, 10 measured runs, warm connection, SQLite, 10,000 rows. Results in Section 3.
 
 ---
 
 ## 3 — Timing Comparison
 
-Measured against **10,000 rows** (100 authors × 100 quotes each), SQLite, single request:
+**Rig:** SQLite, 10,000 rows (100 authors × 100 quotes), warm `IDbConnection` / warm `DbContext`, 1 warm-up run discarded, 10 measured runs.
 
-```
-EF version:     883 ms
-Dapper version: 164 ms
-Dapper is 5.4x faster on 10,000 rows
-```
+| | Min | Max | Avg |
+|---|---|---|---|
+| EF Core (`GetQuotesByAuthorHandler`) | 33ms | 1365ms | 222ms |
+| Dapper (`QuoteDapperRepository`) | 17ms | 67ms | 37ms |
+| **Ratio** | | | **~6x faster on avg (222÷37)** |
 
 **Why the gap exists:**
 
-| What happens | EF Core | Dapper |
+| Step | EF Core | Dapper |
 |---|---|---|
-| Query translation (LINQ → SQL) | Yes — every cold request | No — you write the SQL |
-| Identity map maintenance | Yes — tracks every entity | No |
-| Intermediate object materialisation | Yes — full entity, then projected | No — maps direct to DTO |
-| Change tracker overhead | Skipped (`AsNoTracking`) | Not applicable |
-| Connection management | Via `DbContext` | Raw `IDbConnection` |
+| Query translation (LINQ → SQL) | Yes — every cold `DbContext` request | No — SQL sent verbatim |
+| Identity map maintenance | Yes — scans map per row returned | Not applicable |
+| Intermediate entity materialisation | Yes — full entity projected to DTO | No — maps direct to DTO via column alias |
+| Change tracker | Skipped (`AsNoTracking`) | Not applicable |
 
-The 883ms vs 164ms gap is almost entirely LINQ-to-SQL translation overhead on a cold `DbContext` + the identity map scan on 100 returned rows. Both numbers are from a single cold-start request — no warm-request measurement was taken.
-
----
-
-## 4 — Endpoints Added
-
-| Method | URL | Handler |
-|--------|-----|---------|
-| GET | `/api/cqrs/quotes/ef/by-author/{authorId}` | `GetQuotesByAuthorHandler` (EF Core) |
-| GET | `/api/cqrs/quotes/dapper/by-author/{authorId}` | `QuoteDapperRepository` (Dapper) |
-
-**DI registration — `Extensions/ServiceCollectionExtensions.cs`:**
-
-```csharp
-// CQRS-lite handlers
-services.AddScoped<CreateQuoteHandler>();
-services.AddScoped<GetQuotesByAuthorHandler>();
-
-// Dapper repository
-services.AddScoped<QuoteDapperRepository>();
-```
+The EF max of 1365ms (vs avg 222ms) shows the cold-start spike — the first request after `DbContext` is created pays the full LINQ-to-SQL translation cost. Subsequent warm requests amortise that cost and the gap narrows, but Dapper's max of 67ms stays flat across all runs because there is no translation step to spike.
 
 ---
 
-## 5 — One-Paragraph Rule
+## 4 — One-Paragraph Rule
 
-> Use EF Core as the default for everything — writes, reads, migrations, and relationships — because it gives you type safety, change tracking, and migration tooling for free. Only reach for Dapper on **hot read paths** where you have **measured** a performance problem: queries that run thousands of times per minute, return large result sets, join many tables, or require SQL that EF translates poorly. Dapper gives you full SQL control and removes the change-tracker and query-translation overhead, but you trade away automatic migrations, refactoring safety (column renames break string SQL silently), and the ability to compose queries in C#. The rule is: **measure first, reach for Dapper only when EF is the proven bottleneck on a specific query**, not because Dapper feels faster.
-
----
-
-## 6 — What I Learned
-
-- Dapper is not a replacement for EF — it is a targeted tool for read-heavy paths where every millisecond counts
-- `AsNoTracking()` already closes most of the gap on warm requests, but cold LINQ translation is still Dapper's win
-- The biggest EF overhead on a cold first call is query translation and the identity map scan — Dapper skips both entirely
-- Writing raw SQL in Dapper means column renames or table changes break silently at runtime, not at compile time
-- A provider-aware connection factory (SQLite vs SQL Server) is needed if the same Dapper repo must work in both dev and prod environments
+> In `GetQuotesByAuthorHandler`, EF Core's LINQ translation and LEFT JOIN add roughly 222ms overhead per warm request against 10,000 rows; Dapper's hand-written LEFT JOIN + COALESCE cuts that to 37ms — but only after I fixed the original INNER JOIN bug that would have silently dropped orphan quotes. The rule I'd give a teammate: **use EF Core as the default everywhere — writes, migrations, and most reads — because it gives you type safety and compile-time rename safety for free. Drop to Dapper only on a specific named query that you have measured as a bottleneck, and only after confirming the two queries are semantically equivalent (same JOIN type, same null handling)**. In this codebase the only place Dapper earns its place is `GetQuotesByAuthorHandler` on the `/dapper/by-author/{id}` hot path; every other query stays on EF.
 
 ---
 
-## 7 — What Would Break This
+## 5 — What I Learned
 
-- **Column rename without updating SQL string** — Dapper maps by alias, so renaming `q.Text` to `q.Body` silently returns empty strings for `QuoteText` with no compile error
-- **Connection string missing** — `QuoteDapperRepository` throws `InvalidOperationException` at request time if `DefaultConnection` is not configured
-- **Wrong provider flag** — using `SqlConnection` against a SQLite file throws a connection error at runtime, not compile time
-- **No pagination** — both endpoints return all quotes for an author; an author with 100,000 quotes would OOM the process
-- **SQLite write contention** — SQLite has a single writer lock; under concurrent load the Dapper SQLite path sees lock contention that SQL Server handles natively
-- **EF LEFT JOIN vs Dapper INNER JOIN** — EF translates the null-safe LINQ join into `LEFT JOIN`, so quotes with a `NULL AuthorId` are still returned (with `AuthorName` falling back to the string `Author` column). Dapper uses `INNER JOIN`, so those same rows are silently dropped. The two endpoints are **not semantically equivalent** when orphan quotes exist — the seeded data happens to satisfy the join for every row, hiding this difference
+- The biggest lesson from Attempt 1: I noticed the JOIN mismatch and documented it as a risk in "What Would Break This" — but a data-correctness difference between two implementations of the same query is not a footnote, it is a bug. I should have fixed it, not footnoted it.
+- `COALESCE(a.Name, q.Author)` in SQL is the exact equivalent of `a != null ? a.Name : q.Author` in LINQ — both LEFT JOINs fall back to the string column when the join produces no match.
+- One cold-start timing number is not a benchmark. Running 10 warm iterations reveals real variance and whether the gap is consistent or an outlier.
 
 ---
 
-## 8 — GitHub Link
+## 6 — What Would Break This
+
+- **Column rename without updating SQL string** — Dapper maps by alias; renaming `q.Text` to `q.Body` silently returns empty strings for `QuoteText` with no compile error. EF catches renames at build time.
+- **Switching back to INNER JOIN** — would silently drop orphan quotes (null `AuthorId`) from Dapper results while EF still returns them. The seeded data satisfies the join for every row, so this bug would be invisible in CI.
+- **No pagination** — both endpoints return all 100 quotes for an author. Scale to 100,000 quotes per author and both endpoints OOM the process.
+- **SQLite write contention under load** — SQLite has a single writer lock; the Dapper SQLite path under concurrent read+write load will see lock contention that SQL Server handles natively.
+
+---
+
+## 7 — GitHub Link
 
 **Repo:** `https://github.com/thinkbridge-thinkschool/ThinkSchoo-ameykhot-Day1`
 **Branch:** `day12/cqrs-lite-dapper`
@@ -301,8 +289,9 @@ services.AddScoped<QuoteDapperRepository>();
 
 | # | File | What it shows |
 |---|------|---------------|
-| 1 | `dapper-added-csproj.png` | `.csproj` with `Dapper 2.1.79` at line 12 |
-| 2 | `sqlclient-added-csproj.png` | `.csproj` with `Microsoft.Data.SqlClient 7.0.1` at line 13 |
-| 3 | `ef-endpoint-timing.png` | Console — EF SQL log + `EF version: 883ms` + correct endpoint in ActivityDisplayName |
-| 4 | `ef-vs-dapper-console-timing.png` | Console — `Dapper version: 164ms` + correct endpoint in ActivityDisplayName |
-| 5 | `dapper-json-response.png` | curl JSON response from Dapper endpoint proving same data as EF |
+| 1 | `dapper-added-csproj.png` | `.csproj` with `Dapper 2.1.79` |
+| 2 | `sqlclient-added-csproj.png` | `.csproj` with `Microsoft.Data.SqlClient 7.0.1` |
+| 3 | `ef-endpoint-timing.png` | Console — EF SQL log + `EF version: 883ms` |
+| 4 | `ef-vs-dapper-console-timing.png` | Console — `Dapper version: 164ms`, no SQL translation log |
+| 5 | `dapper-json-response.png` | curl JSON response from Dapper endpoint |
+| 6 | `benchmark-10-runs.png` | 10-run benchmark — min/max/avg for both endpoints |

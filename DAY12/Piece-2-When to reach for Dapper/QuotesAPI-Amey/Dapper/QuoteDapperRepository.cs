@@ -32,12 +32,12 @@ public class QuoteDapperRepository
             connection = new SqlConnection(_connectionString);
             sql = @"
                 SELECT
-                    q.Id          AS QuoteId,
-                    q.Text        AS QuoteText,
-                    a.Name        AS AuthorName,
-                    FORMAT(q.CreatedAt, 'dd MMM yyyy') AS CreatedAt
+                    q.Id                                AS QuoteId,
+                    q.Text                              AS QuoteText,
+                    COALESCE(a.Name, q.Author)          AS AuthorName,
+                    FORMAT(q.CreatedAt, 'dd MMM yyyy')  AS CreatedAt
                 FROM Quotes q
-                INNER JOIN Authors a ON a.Id = q.AuthorId
+                LEFT JOIN Authors a ON a.Id = q.AuthorId
                 WHERE q.AuthorId = @AuthorId";
         }
         else
@@ -45,12 +45,12 @@ public class QuoteDapperRepository
             connection = new SqliteConnection(_connectionString);
             sql = @"
                 SELECT
-                    q.Id          AS QuoteId,
-                    q.Text        AS QuoteText,
-                    a.Name        AS AuthorName,
-                    q.CreatedAt   AS CreatedAt
+                    q.Id                        AS QuoteId,
+                    q.Text                      AS QuoteText,
+                    COALESCE(a.Name, q.Author)  AS AuthorName,
+                    q.CreatedAt                 AS CreatedAt
                 FROM Quotes q
-                INNER JOIN Authors a ON a.Id = q.AuthorId
+                LEFT JOIN Authors a ON a.Id = q.AuthorId
                 WHERE q.AuthorId = @AuthorId";
         }
 
