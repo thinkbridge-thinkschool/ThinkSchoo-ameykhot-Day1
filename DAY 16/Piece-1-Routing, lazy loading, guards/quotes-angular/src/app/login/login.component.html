@@ -1,0 +1,103 @@
+<div class="login-page">
+
+  <div class="login-card">
+
+    <div class="login-header">
+      <div class="login-badge">✦ Philosophy Collection</div>
+      <h1 class="login-title">
+        <span class="gradient-text">Sign In</span>
+      </h1>
+      <p class="login-desc">Sign in to explore and add quotes</p>
+    </div>
+
+    <!-- Session / auth banner -->
+    @if (banner) {
+      <div class="banner" [class.banner--expired]="banner.type === 'expired'" [class.banner--info]="banner.type === 'info'">
+        <span class="banner-icon">
+          {{ banner.type === 'expired' ? '⏱' : '🔒' }}
+        </span>
+        <span>{{ banner.message }}</span>
+      </div>
+    }
+
+    <!-- Login error -->
+    @if (loginError()) {
+      <div class="error-card">
+        <span class="error-icon">⚠</span>
+        <p>{{ loginError() }}</p>
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onLogin()" novalidate>
+
+      <div class="field-group">
+        <label class="field-label" for="email">Email</label>
+        <input
+          id="email"
+          class="field-input"
+          type="email"
+          formControlName="email"
+          placeholder="you@example.com"
+          autocomplete="email"
+          [attr.aria-invalid]="emailCtrl.invalid && emailCtrl.touched"
+        />
+        @if (emailCtrl.invalid && emailCtrl.touched) {
+          <span class="field-error">
+            @if (emailCtrl.errors?.['required']) { Email is required. }
+            @else { Enter a valid email address. }
+          </span>
+        }
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="password">Password</label>
+        <div class="password-wrap">
+          <input
+            id="password"
+            class="field-input"
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            [attr.aria-invalid]="passwordCtrl.invalid && passwordCtrl.touched"
+          />
+          <button
+            type="button"
+            class="eye-btn"
+            (click)="togglePassword()"
+            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+          >
+            @if (showPassword()) {
+              <!-- Eye-off SVG -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            } @else {
+              <!-- Eye SVG -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            }
+          </button>
+        </div>
+        @if (passwordCtrl.invalid && passwordCtrl.touched) {
+          <span class="field-error">Password is required.</span>
+        }
+      </div>
+
+      <button
+        class="submit-btn"
+        type="submit"
+        [disabled]="isLoggingIn()"
+      >
+        {{ isLoggingIn() ? 'Signing in…' : 'Sign In' }}
+      </button>
+
+    </form>
+
+  </div>
+
+</div>
