@@ -36,6 +36,19 @@ public static class ServiceCollectionExtensions
             logger.LogInformation("Applying EF Core migrations...");
             dbContext.Database.Migrate();
             logger.LogInformation("Migrations applied successfully");
+
+            if (!dbContext.Quotes.Any())
+            {
+                dbContext.Quotes.AddRange(
+                    new Quote { Author = "Aristotle", Text = "The more you know, the more you realize you don't know." },
+                    new Quote { Author = "Marcus Aurelius", Text = "You have power over your mind, not outside events. Realize this, and you will find strength." },
+                    new Quote { Author = "Seneca", Text = "Luck is what happens when preparation meets opportunity." },
+                    new Quote { Author = "Plato", Text = "The measure of a man is what he does with power." },
+                    new Quote { Author = "Epictetus", Text = "Make the best use of what is in your power, and take the rest as it happens." }
+                );
+                dbContext.SaveChanges();
+                logger.LogInformation("Seeded 5 initial quotes");
+            }
         }
         catch (Exception ex)
         {
@@ -88,6 +101,7 @@ public static class EndpointExtensions
         ILogger<Program> logger,
         int page = 1,
         int size = 10,
+        string search = "",
         CancellationToken cancellationToken = default)
     {
         if (page < 1 || size < 1)
@@ -101,8 +115,8 @@ public static class EndpointExtensions
             });
         }
 
-        var result = await repository.GetQuotesAsync(page, size, cancellationToken);
-        logger.LogInformation("Retrieved {Count} quotes from page {Page}", result.Items.Count, page);
+        var result = await repository.GetQuotesAsync(page, size, search, cancellationToken);
+        logger.LogInformation("Retrieved {Count} quotes from page {Page} search={Search}", result.Items.Count, page, search);
         
         return Results.Ok(new
         {

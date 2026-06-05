@@ -1,0 +1,61 @@
+name: Build & Deploy API to Azure Container Apps
+
+on:
+  push:
+    branches: [main, Day17/azure-swa-deploy]
+    paths:
+      - 'DAY17/Piece-1-Deploy to Azure Static Web Apps/QuotesAPI-Amey/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+env:
+  REGISTRY: quotesappacramey.azurecr.io
+  IMAGE:    quotesapp-api
+  APP:      quotesapp-api-amey
+  RG:       quotesapp-rg-amey
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: "DAY17/Piece-1-Deploy to Azure Static Web Apps/QuotesAPI-Amey"
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE }}:${{ github.sha }}
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Container App
+        run: |
+          az containerapp registry set \
+            --name ${{ env.APP }} \
+            --resource-group ${{ env.RG }} \
+            --server ${{ env.REGISTRY }} \
+            --username ${{ secrets.ACR_USERNAME }} \
+            --password ${{ secrets.ACR_PASSWORD }}
+
+          az containerapp update \
+            --name ${{ env.APP }} \
+            --resource-group ${{ env.RG }} \
+            --image ${{ env.REGISTRY }}/${{ env.IMAGE }}:${{ github.sha }}
+
+          az containerapp ingress update \
+            --name ${{ env.APP }} \
+            --resource-group ${{ env.RG }} \
+            --target-port 8080

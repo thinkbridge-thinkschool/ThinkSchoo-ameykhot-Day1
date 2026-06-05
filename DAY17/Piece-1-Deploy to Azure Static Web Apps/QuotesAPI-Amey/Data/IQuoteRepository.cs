@@ -5,7 +5,7 @@ namespace QuotesApi.Data;
 
 public interface IQuoteRepository
 {
-    Task<PaginatedResult<Quote>> GetQuotesAsync(int page, int size, string search = "", CancellationToken cancellationToken = default);
+    Task<PaginatedResult<Quote>> GetQuotesAsync(int page, int size, string? search = null, CancellationToken cancellationToken = default);
     Task<Quote?> GetQuoteByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<Quote> CreateQuoteAsync(Quote quote, CancellationToken cancellationToken = default);
     Task<bool> DeleteQuoteAsync(int id, CancellationToken cancellationToken = default);
@@ -31,29 +31,33 @@ public class QuoteRepository : IQuoteRepository
         _logger = logger;
     }
 
-    public async Task<PaginatedResult<Quote>> GetQuotesAsync(int page, int size, string search = "", CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<Quote>> GetQuotesAsync(int page, int size, string? search = null, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Fetching quotes page={Page} size={Size} search={Search}", page, size, search);
+        _logger.LogInformation("Fetching quotes with page={Page}, size={Size}, search={Search}", page, size, search);
 
         var query = _context.Quotes.AsQueryable();
-
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(q =>
-                q.Author.Contains(search) || q.Text.Contains(search));
+            query = query.Where(q => q.Author.ToLower().StartsWith(search.ToLower()));
 
         var total = await query.CountAsync(cancellationToken);
         var items = await query
-            .OrderByDescending(q => q.CreatedAt)
+            .OrderBy(q => q.Id)
             .Skip((page - 1) * size)
             .Take(size)
             .ToListAsync(cancellationToken);
 
-        return new PaginatedResult<Quote> { Items = items, Total = total, Page = page, Size = size };
+        return new PaginatedResult<Quote>
+        {
+            Items = items,
+            Total = total,
+            Page = page,
+            Size = size
+        };
     }
 
     public async Task<Quote?> GetQuoteByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Fetching quote id={QuoteId}", id);
+        _logger.LogInformation("Fetching quote with id={QuoteId}", id);
         return await _context.Quotes.FirstOrDefaultAsync(q => q.Id == id, cancellationToken);
     }
 
@@ -67,14 +71,18 @@ public class QuoteRepository : IQuoteRepository
 
     public async Task<bool> DeleteQuoteAsync(int id, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Deleting quote id={QuoteId}", id);
+        _logger.LogInformation("Deleting quote with id={QuoteId}", id);
         var quote = await GetQuoteByIdAsync(id, cancellationToken);
-        if (quote is null) return false;
+        if (quote is null)
+            return false;
+
         _context.Quotes.Remove(quote);
         await SaveChangesAsync(cancellationToken);
         return true;
     }
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
-        => await _context.SaveChangesAsync(cancellationToken);
+    {
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 }
