@@ -6,11 +6,27 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="A curated collection of inspiring quotes — browse, create, and share your favourites.">
-  <meta name="theme-color" content="#1976d2">
+  <meta name="theme-color" content="#060918">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="preconnect" href="https://quotesapp-api-amey.happydesert-dfe27d04.eastus.azurecontainerapps.io">
+  <style>
+    .app-shell{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#060918;color:#f1f5f9;font-family:system-ui,-apple-system,sans-serif}
+    .app-shell-inner{text-align:center;padding:2rem}
+    .app-shell-badge{font-size:.72rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:#f59e0b;margin-bottom:1rem}
+    .app-shell-title{font-family:Georgia,'Times New Roman',serif;font-size:3rem;font-weight:700;line-height:1.2;margin:.5rem 0;background:linear-gradient(135deg,#f59e0b 0%,#ec4899 50%,#7c3aed 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .app-shell-sub{color:#94a3b8;font-size:.95rem;margin-top:.5rem}
+  </style>
 </head>
 <body>
-  <app-root></app-root>
+  <app-root>
+    <!-- Visible immediately before Angular boots — becomes the LCP element -->
+    <div class="app-shell">
+      <div class="app-shell-inner">
+        <div class="app-shell-badge">✦ Philosophy Collection</div>
+        <h1 class="app-shell-title">Quotes Explorer</h1>
+        <p class="app-shell-sub">Wisdom from the greatest minds across centuries</p>
+      </div>
+    </div>
+  </app-root>
 </body>
 </html>
