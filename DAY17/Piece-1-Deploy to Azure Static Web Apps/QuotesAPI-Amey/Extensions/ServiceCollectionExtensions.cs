@@ -168,9 +168,10 @@ public static class ServiceCollectionExtensions
                 };
 
                 var quotes = new List<Quote>();
-                for (int i = 0; i < authors.Count; i++)
+                // Interleave authors so page 1 shows 10 different authors (not 10 quotes from one author)
+                for (int j = 0; j < 100; j++)
                 {
-                    for (int j = 0; j < 100; j++)
+                    for (int i = 0; i < authors.Count; i++)
                     {
                         var template = quoteTemplates[(i * 7 + j) % quoteTemplates.Length];
                         var q = new Quote(authors[i].Name, $"{template} (v{j + 1})", DateTime.UtcNow);

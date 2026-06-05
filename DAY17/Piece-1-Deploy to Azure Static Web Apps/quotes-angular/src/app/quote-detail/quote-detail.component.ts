@@ -5,6 +5,7 @@ import { map } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Quote } from '../quote.model';
 import { StarService } from '../star.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-quote-detail',
@@ -59,7 +60,7 @@ export class QuoteDetailComponent {
       this.detailError.set(null);
       this.selectedQuote.set(null);
 
-      fetch(`/api/quotes/${id}`, { signal: ctrl.signal })
+      fetch(`${environment.apiBase}/api/quotes/${id}`, { signal: ctrl.signal })
         .then(res => {
           if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
           return res.json() as Promise<Quote>;

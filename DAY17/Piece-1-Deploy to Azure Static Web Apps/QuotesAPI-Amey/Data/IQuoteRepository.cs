@@ -41,7 +41,7 @@ public class QuoteRepository : IQuoteRepository
 
         var total = await query.CountAsync(cancellationToken);
         var items = await query
-            .OrderByDescending(q => q.CreatedAt)
+            .OrderBy(q => q.Id)
             .Skip((page - 1) * size)
             .Take(size)
             .ToListAsync(cancellationToken);
