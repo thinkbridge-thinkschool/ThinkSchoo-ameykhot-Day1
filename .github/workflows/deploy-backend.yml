@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, Day17/azure-swa-deploy]
     paths:
-      - 'DAY-1/Piece-3-Stand up an ASP.NET Core 10 minimal API/QuotesApi/**'
+      - 'DAY17/Piece-1-Deploy to Azure Static Web Apps/QuotesAPI-Amey/**'
       - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:
 
@@ -30,7 +30,7 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v5
         with:
-          context: "DAY-1/Piece-3-Stand up an ASP.NET Core 10 minimal API/QuotesApi"
+          context: "DAY17/Piece-1-Deploy to Azure Static Web Apps/QuotesAPI-Amey"
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE }}:latest

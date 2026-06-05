@@ -1,47 +1,50 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, map, of, tap } from 'rxjs';
+import { Observable, tap } from 'rxjs';
+import { environment } from '../environments/environment';
 
-interface SwaClientPrincipal {
-  userId: string;
-  userRoles: string[];
-  claims: Array<{ typ: string; val: string }>;
-  identityProvider: string;
-  userDetails: string;
+interface LoginResponse {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly http = inject(HttpClient);
+  private readonly http      = inject(HttpClient);
+  private readonly TOKEN_KEY = 'auth_token';
+  private readonly base      = environment.apiBase;
 
-  readonly clientPrincipal  = signal<SwaClientPrincipal | null>(null);
-  readonly isLoggedIn        = computed(() => this.clientPrincipal() !== null);
-  readonly currentUserEmail  = computed(() => this.clientPrincipal()?.userDetails ?? null);
+  readonly token      = signal<string | null>(localStorage.getItem(this.TOKEN_KEY));
+  readonly isLoggedIn = computed(() => this.token() !== null);
 
-  checkAuth(): Observable<boolean> {
-    return this.http.get<{ clientPrincipal: SwaClientPrincipal | null }>('/.auth/me').pipe(
-      tap(res => this.clientPrincipal.set(res.clientPrincipal)),
-      map(res => res.clientPrincipal !== null),
-      catchError(() => {
-        // /.auth/me is unavailable in plain `ng serve` dev — treat as authenticated
-        this.clientPrincipal.set({
-          userId: 'dev-user',
-          userRoles: ['authenticated'],
-          claims: [],
-          identityProvider: 'dev',
-          userDetails: 'dev@localhost',
-        });
-        return of(true);
+  readonly currentUserEmail = computed<string | null>(() => {
+    const token = this.token();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return (
+        payload['email'] ??
+        payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ??
+        payload['sub'] ??
+        null
+      );
+    } catch {
+      return null;
+    }
+  });
+
+  login(email: string, password: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.base}/api/auth/login`, { email, password }).pipe(
+      tap(res => {
+        localStorage.setItem(this.TOKEN_KEY, res.access_token);
+        this.token.set(res.access_token);
       })
     );
   }
 
-  login(): void {
-    window.location.href = '/.auth/login/aad?post_login_redirect_uri=/quotes';
-  }
-
   logout(): void {
-    this.clientPrincipal.set(null);
-    window.location.href = '/.auth/logout?post_logout_redirect_uri=/login';
+    localStorage.removeItem(this.TOKEN_KEY);
+    this.token.set(null);
   }
 }

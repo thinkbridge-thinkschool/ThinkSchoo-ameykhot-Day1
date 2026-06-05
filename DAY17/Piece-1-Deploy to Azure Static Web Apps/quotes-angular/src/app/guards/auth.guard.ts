@@ -1,16 +1,27 @@
 import { inject } from '@angular/core';
-import { CanActivateFn } from '@angular/router';
-import { map } from 'rxjs';
+import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../auth.service';
 
-export const authGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
+export const authGuard: CanActivateFn = (_route, _state) => {
+  const router = inject(Router);
+  const auth   = inject(AuthService);
+  const token  = localStorage.getItem('auth_token');
 
-  return auth.checkAuth().pipe(
-    map(isAuth => {
-      if (isAuth) return true;
-      auth.login(); // redirects to /.auth/login/aad
-      return false;
-    })
-  );
+  if (!token) {
+    return router.parseUrl('/login?reason=unauthenticated');
+  }
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const now     = Math.floor(Date.now() / 1000);
+    if (payload.exp && payload.exp < now) {
+      auth.logout();
+      return router.parseUrl('/login?reason=expired');
+    }
+  } catch {
+    auth.logout();
+    return router.parseUrl('/login?reason=unauthenticated');
+  }
+
+  return true;
 };

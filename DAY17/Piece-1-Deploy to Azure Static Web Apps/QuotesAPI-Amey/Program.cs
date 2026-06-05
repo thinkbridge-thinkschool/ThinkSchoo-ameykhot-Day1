@@ -34,6 +34,15 @@ builder.Host.UseSerilog((context, services, configuration) =>
         .ReadFrom.Services(services)
         .Enrich.FromLogContext());
 
+builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
+    p.WithOrigins(
+        "http://localhost:4200",
+        "https://lively-field-0238eb80f.7.azurestaticapps.net"
+    )
+    .AllowAnyHeader()
+    .AllowAnyMethod()
+    .AllowCredentials()));
+
 // Add services
 builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -150,7 +159,7 @@ app.Use((ctx, next) =>
 
 // Middleware
 app.UseExceptionMiddleware();
-app.UseHttpsRedirection();
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 

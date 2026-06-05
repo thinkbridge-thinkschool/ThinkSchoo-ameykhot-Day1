@@ -3,12 +3,15 @@ import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../auth.service';
 
-// SWA manages the session cookie and injects X-MS-CLIENT-PRINCIPAL-* into forwarded
-// requests to the linked Container App — no manual Bearer token injection needed here.
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const auth = inject(AuthService);
+  const auth  = inject(AuthService);
+  const token = auth.token();
 
-  return next(req).pipe(
+  const authReq = token
+    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+    : req;
+
+  return next(authReq).pipe(
     catchError((err: unknown) => {
       if (err instanceof HttpErrorResponse && err.status === 401) {
         auth.logout();
