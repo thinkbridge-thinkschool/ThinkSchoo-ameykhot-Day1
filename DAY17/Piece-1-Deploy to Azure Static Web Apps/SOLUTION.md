@@ -1,4 +1,4 @@
-# Day 17 — Deploy to Azure Static Web Apps
+﻿# Day 17 â€” Deploy to Azure Static Web Apps
 
 ## Live URL
 **`https://lively-field-0238eb80f.7.azurestaticapps.net`**
@@ -13,7 +13,7 @@
 |---|---|
 | **Target SWA URL** | `https://lively-field-0238eb80f.7.azurestaticapps.net` |
 | **Backend API** | `https://quotesapp-api-amey.happydesert-dfe27d04.eastus.azurecontainerapps.io` |
-| **Auth model** | Managed Identity — no client secret stored anywhere |
+| **Auth model** | Managed Identity â€” no client secret stored anywhere |
 
 **Endpoints the frontend must hit:**
 
@@ -160,7 +160,7 @@ az role assignment create \
   --role "Key Vault Secrets User" \
   --scope /subscriptions/50f9dc41.../vaults/quotesapp-kv-amey
 
-# 3. Store JWT signing key in Key Vault — NOT in code or env vars
+# 3. Store JWT signing key in Key Vault â€” NOT in code or env vars
 az keyvault secret set \
   --vault-name quotesapp-kv-amey \
   --name "Jwt--Key" \
@@ -175,17 +175,17 @@ az keyvault secret set \
 
 The backend reads Key Vault via `DefaultAzureCredential` (managed identity):
 ```csharp
-// Program.cs — reads from Key Vault using system-assigned MI
+// Program.cs â€” reads from Key Vault using system-assigned MI
 var keyVaultUrl = builder.Configuration["KeyVault:Url"];
 if (!string.IsNullOrWhiteSpace(keyVaultUrl))
 {
     builder.Configuration.AddAzureKeyVault(
         new Uri(keyVaultUrl),
-        new DefaultAzureCredential());  // uses managed identity — no secrets needed
+        new DefaultAzureCredential());  // uses managed identity â€” no secrets needed
 }
 ```
 
-### Angular Auth (`auth.service.ts`) — JWT, no secrets in code
+### Angular Auth (`auth.service.ts`) â€” JWT, no secrets in code
 ```typescript
 login(email: string, password: string): Observable<LoginResponse> {
   return this.http.post<LoginResponse>(`${environment.apiBase}/api/auth/login`,
@@ -197,7 +197,7 @@ login(email: string, password: string): Observable<LoginResponse> {
 }
 ```
 
-### Production Environment (`environment.prod.ts`) — only URL, zero secrets
+### Production Environment (`environment.prod.ts`) â€” only URL, zero secrets
 ```typescript
 export const environment = {
   production: true,
@@ -213,14 +213,14 @@ export const environment = {
 
 | Test | Result |
 |---|---|
-| Live URL loads | ✅ `https://lively-field-0238eb80f.7.azurestaticapps.net` |
-| 10,001 quotes visible with pagination | ✅ Badge shows 10,001 |
-| Search by author (type "Aristotle") | ✅ Filters correctly |
-| Login with seed credentials | ✅ `user@test.com` / `password123` |
-| Add quote (author + text) | ✅ Appears in list immediately |
-| View quote detail | ✅ Shows full quote after login |
-| Star a quote | ✅ Persists in Starred tab |
-| Session expiry after 15 min | ✅ Redirects to `/login?reason=expired` |
+| Live URL loads | âœ… `https://lively-field-0238eb80f.7.azurestaticapps.net` |
+| 10,001 quotes visible with pagination | âœ… Badge shows 10,001 |
+| Search by author (type "Aristotle") | âœ… Filters correctly |
+| Login with seed credentials | âœ… `user@test.com` / `password123` |
+| Add quote (author + text) | âœ… Appears in list immediately |
+| View quote detail | âœ… Shows full quote after login |
+| Star a quote | âœ… Persists in Starred tab |
+| Session expiry after 15 min | âœ… Redirects to `/login?reason=expired` |
 
 ### Lighthouse Scores (Desktop, Incognito Chrome)
 
@@ -231,84 +231,84 @@ export const environment = {
 | Best Practices | **100** |
 | SEO | **100** |
 
-### No Secret Stored Anywhere — Evidence
+### No Secret Stored Anywhere â€” Evidence
 
 | Location | Content |
 |---|---|
-| Repo / code | Only `apiBase` URL — zero passwords or keys |
-| `environment.prod.ts` | `apiBase: 'https://...'` — URL only |
-| Container App app settings | No plain-text secrets — reads via managed identity |
+| Repo / code | Only `apiBase` URL â€” zero passwords or keys |
+| `environment.prod.ts` | `apiBase: 'https://...'` â€” URL only |
+| Container App app settings | No plain-text secrets â€” reads via managed identity |
 | Key Vault `quotesapp-kv-amey` | Stores `Jwt--Key`, `AppInsightsConnectionString` |
 | Container App identity | System-assigned MI with `Key Vault Secrets User` RBAC role |
 | GitHub Actions secrets | `ACR_USERNAME`, `ACR_PASSWORD`, `AZURE_CREDENTIALS` (encrypted, not in code) |
 
 ### States Exercised
-- ✅ **Loading state** — spinner appears while quotes fetch from Container App
-- ✅ **Populated state** — 10,001 quotes with pagination (10 per page)
-- ✅ **Empty state** — search for `xyznonexistent` shows empty state component
-- ✅ **Error state** — block the API domain → error card with retry button
-- ✅ **Unauthenticated** — click quote without login → redirect to `/login?reason=unauthenticated`
-- ✅ **Session expired** — JWT exp in past → redirect to `/login?reason=expired`
-- ✅ **401 / invalid token** — tampered Bearer token → auth interceptor clears localStorage, redirects to login
+- âœ… **Loading state** â€” spinner appears while quotes fetch from Container App
+- âœ… **Populated state** â€” 10,001 quotes with pagination (10 per page)
+- âœ… **Empty state** â€” search for `xyznonexistent` shows empty state component
+- âœ… **Error state** â€” block the API domain â†’ error card with retry button
+- âœ… **Unauthenticated** â€” click quote without login â†’ redirect to `/login?reason=unauthenticated`
+- âœ… **Session expired** â€” JWT exp in past â†’ redirect to `/login?reason=expired`
+- âœ… **401 / invalid token** â€” tampered Bearer token â†’ auth interceptor clears localStorage, redirects to login
 
 ### One Concrete Bug the Agent Made and I Fixed
 
-The agent initially deployed the **wrong backend**. It pointed at the Day-1 minimal API (`DAY-1/Piece-3/QuotesApi` — a 5-quote SQLite stub with no `/api/auth/login` endpoint) instead of `QuotesAPI-Amey` (the real Week-1 finished backend with 10,000 seeded quotes, BCrypt password hashing, JWT with refresh-token rotation, dual-scheme authentication — internal HS256 + Entra ID RS256, OpenTelemetry + Serilog observability, Key Vault integration via managed identity).
+The agent initially deployed the **wrong backend**. It pointed at the Day-1 minimal API (`DAY-1/Piece-3/QuotesApi` â€” a 5-quote SQLite stub with no `/api/auth/login` endpoint) instead of `QuotesAPI-Amey` (the real Week-1 finished backend with 10,000 seeded quotes, BCrypt password hashing, JWT with refresh-token rotation, dual-scheme authentication â€” internal HS256 + Entra ID RS256, OpenTelemetry + Serilog observability, Key Vault integration via managed identity).
 
-The symptom: login returned 404, only 5 hard-coded quotes appeared, search did nothing, and the auth interceptor caught a 404 as a 401 — logging the user out immediately. I corrected the build path in `deploy-backend.yml` from `DAY-1/Piece-3-Stand up an ASP.NET Core 10 minimal API/QuotesApi` to `DAY17/Piece-1-Deploy to Azure Static Web Apps/QuotesAPI-Amey`, and stored the JWT signing key in Key Vault so it is never in app settings.
+The symptom: login returned 404, only 5 hard-coded quotes appeared, search did nothing, and the auth interceptor caught a 404 as a 401 â€” logging the user out immediately. I corrected the build path in `deploy-backend.yml` from `DAY-1/Piece-3-Stand up an ASP.NET Core 10 minimal API/QuotesApi` to `DAY17/Piece-1-Deploy to Azure Static Web Apps/QuotesAPI-Amey`, and stored the JWT signing key in Key Vault so it is never in app settings.
 
 ### What Breaks if the API Changes
 
 | Change | Impact |
 |---|---|
-| `GET /api/quotes` renames `data` → `items` | Quotes list goes blank silently — `QuotesStore` sets `[]` with no error |
-| `POST /api/auth/login` changes response shape | Login succeeds server-side but token is never stored → user stuck logged out |
-| JWT signing key rotated without restarting Container App | All in-flight tokens become invalid → every user is forced to re-login immediately |
-| Container App scales to zero (`--min-replicas 0`) | Cold start takes 8–12s → Lighthouse LCP spikes, first user request times out |
-| Key Vault goes offline | Container App fails to start (JWT key not available) → backend returns 503 |
+| `GET /api/quotes` renames `data` â†’ `items` | Quotes list goes blank silently â€” `QuotesStore` sets `[]` with no error |
+| `POST /api/auth/login` changes response shape | Login succeeds server-side but token is never stored â†’ user stuck logged out |
+| JWT signing key rotated without restarting Container App | All in-flight tokens become invalid â†’ every user is forced to re-login immediately |
+| Container App scales to zero (`--min-replicas 0`) | Cold start takes 8â€“12s â†’ Lighthouse LCP spikes, first user request times out |
+| Key Vault goes offline | Container App fails to start (JWT key not available) â†’ backend returns 503 |
 
 ---
 
 ## Screenshots
 
 ### 1. Angular App Deployed on Azure Static Web Apps
-![Angular app live on Azure SWA](screenshots/Anguler-depolye-azure%20.png)
+![Angular app live on Azure SWA](ScreenShots/Anguler-depolye-azure%20.png)
 
-### 2. Live URL — 10,001 Quotes Loaded
-![Live URL showing 10,001 quotes loaded with pagination](screenshots/01-live-url-quotes-list.png)
+### 2. Live URL â€” 10,001 Quotes Loaded
+![Live URL showing 10,001 quotes loaded with pagination](ScreenShots/01-live-url-quotes-list.png)
 
 ### 3. Login Page with Seed Credentials
-![Login form pre-filled with user@test.com / password123](screenshots/02-login-page.png)
+![Login form pre-filled with user@test.com / password123](ScreenShots/02-login-page.png)
 
 ### 4. Logged-In State (user@test.com)
-![Logged in as user@test.com with Sign Out button visible](screenshots/03-logged-in-user.png)
+![Logged in as user@test.com with Sign Out button visible](ScreenShots/03-logged-in-user.png)
 
-### 5. Auth Guard — Redirect to Login When Unauthenticated
-![Clicking a quote without login redirects with unauthenticated banner](screenshots/04-unauth-redirect-to-login.png)
+### 5. Auth Guard â€” Redirect to Login When Unauthenticated
+![Clicking a quote without login redirects with unauthenticated banner](ScreenShots/04-unauth-redirect-to-login.png)
 
 ### 6. Bearer Token in Network Request (Managed Identity Token)
-![DevTools Network tab showing Authorization: Bearer JWT on every API call](screenshots/06-jwt-bearer-token-in-network.png)
+![DevTools Network tab showing Authorization: Bearer JWT on every API call](ScreenShots/06-jwt-bearer-token-in-network.png)
 
 ### 7. Pagination Working Across 10,001 Quotes
-![Next/Prev page buttons navigating 1,001 pages of quotes](screenshots/07-pagination-10001-quotes.png)
+![Next/Prev page buttons navigating 1,001 pages of quotes](ScreenShots/07-pagination-10001-quotes.png)
 
 ### 8. Search Filtering by Author Name
-![Typing an author name filters the quotes list in real time](screenshots/08-search-by-author.png)
+![Typing an author name filters the quotes list in real time](ScreenShots/08-search-by-author.png)
 
-### 9. Add Quote — Saved to Database
-![New quote added by user and immediately visible in list](screenshots/09-add-quote.png)
+### 9. Add Quote â€” Saved to Database
+![New quote added by user and immediately visible in list](ScreenShots/09-add-quote.png)
 
-### 10. Lighthouse Score — Mobile
-![Lighthouse scores on mobile simulation](screenshots/Lighthouse%20_test.png)
+### 10. Lighthouse Score â€” Mobile
+![Lighthouse scores on mobile simulation](ScreenShots/Lighthouse%20_test.png)
 
-### 11. Lighthouse Score — Desktop (Incognito, No Extensions)
-![Lighthouse desktop scores: Accessibility 97, Best Practices 100, SEO 100](screenshots/Lighthouse%20_test_desktop.png)
+### 11. Lighthouse Score â€” Desktop (Incognito, No Extensions)
+![Lighthouse desktop scores: Accessibility 97, Best Practices 100, SEO 100](ScreenShots/Lighthouse%20_test_desktop.png)
 
 ### 12. Additional Screenshot 1
-![Screenshot](screenshots/Screenshot%202026-06-05%20182807.png)
+![Screenshot](ScreenShots/Screenshot%202026-06-05%20182807.png)
 
 ### 13. Additional Screenshot 2
-![Screenshot](screenshots/Screenshot%202026-06-05%20184928.png)
+![Screenshot](ScreenShots/Screenshot%202026-06-05%20184928.png)
 
 ---
 
@@ -330,8 +330,9 @@ The symptom: login returned 404, only 5 hard-coded quotes appeared, search did n
 
 ### What I Learned This Session
 
-Azure's Free tier silently blocks features that appear standard — the `auth` block in `staticwebapp.config.json` requires Standard SKU, `az acr build` (ACR Tasks) is disabled on student subscriptions, and linked backends have tier restrictions. Each time, the fix was to build **differently** rather than upgrade: GitHub Actions Docker build instead of ACR Tasks, direct Container App URL instead of SWA linked backend. The lesson: always verify tier compatibility before designing the architecture, not after hitting the error.
+Azure's Free tier silently blocks features that appear standard â€” the `auth` block in `staticwebapp.config.json` requires Standard SKU, `az acr build` (ACR Tasks) is disabled on student subscriptions, and linked backends have tier restrictions. Each time, the fix was to build **differently** rather than upgrade: GitHub Actions Docker build instead of ACR Tasks, direct Container App URL instead of SWA linked backend. The lesson: always verify tier compatibility before designing the architecture, not after hitting the error.
 
 ### What Would Break This
 
-The JWT signing key is a static symmetric secret (HS256). If the key leaks, every token ever issued for this deployment is forgeable with no expiry enforcement. The proper fix is to switch to RS256 using Azure Key Vault's **Managed HSM** with built-in key rotation — the private key never leaves Key Vault, and rotation happens automatically without application changes.
+The JWT signing key is a static symmetric secret (HS256). If the key leaks, every token ever issued for this deployment is forgeable with no expiry enforcement. The proper fix is to switch to RS256 using Azure Key Vault's **Managed HSM** with built-in key rotation â€” the private key never leaves Key Vault, and rotation happens automatically without application changes.
+
