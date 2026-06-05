@@ -43,13 +43,17 @@ jobs:
 
       - name: Deploy to Container App
         run: |
+          az containerapp registry set \
+            --name ${{ env.APP }} \
+            --resource-group ${{ env.RG }} \
+            --server ${{ env.REGISTRY }} \
+            --username ${{ secrets.ACR_USERNAME }} \
+            --password ${{ secrets.ACR_PASSWORD }}
+
           az containerapp update \
             --name ${{ env.APP }} \
             --resource-group ${{ env.RG }} \
-            --image ${{ env.REGISTRY }}/${{ env.IMAGE }}:${{ github.sha }} \
-            --registry-server ${{ env.REGISTRY }} \
-            --registry-username ${{ secrets.ACR_USERNAME }} \
-            --registry-password ${{ secrets.ACR_PASSWORD }}
+            --image ${{ env.REGISTRY }}/${{ env.IMAGE }}:${{ github.sha }}
 
           az containerapp ingress update \
             --name ${{ env.APP }} \
