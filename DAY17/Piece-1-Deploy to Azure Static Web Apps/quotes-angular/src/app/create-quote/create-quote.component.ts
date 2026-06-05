@@ -23,42 +23,6 @@ export class CreateQuoteComponent {
 
   readonly closed = output<void>();
 
-  // ── Login form ──────────────────────────────────────────────────────
-  readonly loginForm = this.fb.group({
-    email:    ['user@test.com', [Validators.required, Validators.email]],
-    password: ['password123',   [Validators.required]],
-  });
-  readonly isLoggingIn  = signal(false);
-  readonly loginError   = signal<string | null>(null);
-
-  get emailCtrl()    { return this.loginForm.controls.email; }
-  get passwordCtrl() { return this.loginForm.controls.password; }
-
-  onLogin(): void {
-    this.loginForm.markAllAsTouched();
-    if (this.loginForm.invalid) return;
-
-    this.isLoggingIn.set(true);
-    this.loginError.set(null);
-    this.loginForm.disable();
-
-    const { email, password } = this.loginForm.getRawValue();
-    this.auth.login(email!, password!).subscribe({
-      next: () => {
-        this.loginForm.enable();
-        this.isLoggingIn.set(false);
-      },
-      error: (err: unknown) => {
-        const msg = err instanceof HttpErrorResponse && err.status === 401
-          ? 'Invalid email or password.'
-          : 'Login failed. Please try again.';
-        this.loginError.set(msg);
-        this.loginForm.enable();
-        this.isLoggingIn.set(false);
-      },
-    });
-  }
-
   // ── Create-quote form ───────────────────────────────────────────────
   readonly isSubmitting = signal(false);
   readonly serverError  = signal<string | null>(null);
