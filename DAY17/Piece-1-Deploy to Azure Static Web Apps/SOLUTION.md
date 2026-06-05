@@ -271,62 +271,44 @@ The symptom: login returned 404, only 5 hard-coded quotes appeared, search did n
 
 ## Screenshots
 
-### App — Live URL with 10,001 Quotes
-![Live URL showing 10,001 quotes loaded](screenshots/01-live-url-quotes-list.png)
+### 1. Angular App Deployed on Azure Static Web Apps
+![Angular app live on Azure SWA](screenshots/Anguler-depolye-azure%20.png)
 
-### Login Page with Seed Credentials
-![Login form with user@test.com pre-filled](screenshots/02-login-page.png)
+### 2. Live URL — 10,001 Quotes Loaded
+![Live URL showing 10,001 quotes loaded with pagination](screenshots/01-live-url-quotes-list.png)
 
-### Logged-in State
-![Logged in as user@test.com with Sign Out button](screenshots/03-logged-in-user.png)
+### 3. Login Page with Seed Credentials
+![Login form pre-filled with user@test.com / password123](screenshots/02-login-page.png)
 
-### Auth Guard — Redirect to Login When Unauthenticated
-![Auth guard redirects with unauthenticated banner](screenshots/04-unauth-redirect-to-login.png)
+### 4. Logged-In State (user@test.com)
+![Logged in as user@test.com with Sign Out button visible](screenshots/03-logged-in-user.png)
 
-### Session Expired After 15 Minutes
-![Session expired banner on login page](screenshots/05-session-expired.png)
+### 5. Auth Guard — Redirect to Login When Unauthenticated
+![Clicking a quote without login redirects with unauthenticated banner](screenshots/04-unauth-redirect-to-login.png)
 
-### Bearer Token Visible in Network Requests
-![DevTools Network tab showing Authorization: Bearer header on API call](screenshots/06-jwt-bearer-token-in-network.png)
+### 6. Bearer Token in Network Request (Managed Identity Token)
+![DevTools Network tab showing Authorization: Bearer JWT on every API call](screenshots/06-jwt-bearer-token-in-network.png)
 
-### Pagination Working Across 10,001 Quotes
-![Paginating through 1001 pages of quotes](screenshots/07-pagination-10001-quotes.png)
+### 7. Pagination Working Across 10,001 Quotes
+![Next/Prev page buttons navigating 1,001 pages of quotes](screenshots/07-pagination-10001-quotes.png)
 
-### Search Filtering by Author Name
-![Search box filtering quotes by author](screenshots/08-search-by-author.png)
+### 8. Search Filtering by Author Name
+![Typing an author name filters the quotes list in real time](screenshots/08-search-by-author.png)
 
-### Add Quote — New Quote Saved to Database
-![New quote added and visible in the list](screenshots/09-add-quote.png)
+### 9. Add Quote — Saved to Database
+![New quote added by user and immediately visible in list](screenshots/09-add-quote.png)
 
-### Quote Detail View
-![Full quote detail with star, copy, and author](screenshots/10-quote-detail-view.png)
+### 10. Lighthouse Score — Mobile
+![Lighthouse scores on mobile simulation](screenshots/Lighthouse%20_test.png)
 
-### Empty State — No Results Found
-![Empty state component when search returns nothing](screenshots/11-empty-state.png)
+### 11. Lighthouse Score — Desktop (Incognito, No Extensions)
+![Lighthouse desktop scores: Accessibility 97, Best Practices 100, SEO 100](screenshots/Lighthouse%20_test_desktop.png)
 
-### Error State — API Unreachable
-![Error card with retry button when backend is blocked](screenshots/12-error-state.png)
+### 12. Additional Screenshot 1
+![Screenshot](screenshots/Screenshot%202026-06-05%20182807.png)
 
-### Lighthouse Score (Desktop, Incognito)
-![Lighthouse scores: Performance, Accessibility 97, Best Practices 100, SEO 100](screenshots/13-lighthouse-score-desktop.png)
-
-### Key Vault — Secrets Stored (Values Hidden)
-![Key Vault showing Jwt--Key and AppInsightsConnectionString secret names](screenshots/14-keyvault-secrets.png)
-
-### Container App — Managed Identity Enabled
-![Container App Identity blade showing System Assigned = On](screenshots/15-container-app-managed-identity.png)
-
-### Container App — No Plain-Text Secrets in Environment Variables
-![Container App environment variables with no passwords or keys](screenshots/16-container-app-no-secrets-in-settings.png)
-
-### Key Vault — Managed Identity Has Secrets User Role
-![Role assignment showing MI has Key Vault Secrets User role](screenshots/17-keyvault-access-policies.png)
-
-### GitHub Actions — Both CI/CD Workflows Green
-![GitHub Actions showing green builds for Angular SWA and Backend](screenshots/18-github-actions-green.png)
-
-### No Secrets in Code — Only API URL
-![environment.prod.ts showing only apiBase URL, no passwords](screenshots/19-no-secrets-in-code.png)
+### 13. Additional Screenshot 2
+![Screenshot](screenshots/Screenshot%202026-06-05%20184928.png)
 
 ---
 
