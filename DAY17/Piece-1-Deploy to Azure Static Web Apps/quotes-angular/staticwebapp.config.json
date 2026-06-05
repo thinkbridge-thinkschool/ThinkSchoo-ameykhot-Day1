@@ -1,19 +1,21 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/api/*", "/.auth/*", "/*.svg", "/*.png", "/*.ico"]
+    "exclude": ["/api/*", "/.auth/*", "/*.svg", "/*.png", "/*.ico", "/robots.txt"]
   },
   "routes": [
     {
       "route": "/.auth/*",
       "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/robots.txt",
+      "allowedRoles": ["anonymous"]
     }
   ],
   "globalHeaders": {
-    "Cache-Control": "no-store",
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "SAMEORIGIN",
-    "X-XSS-Protection": "1; mode=block",
     "Referrer-Policy": "strict-origin-when-cross-origin"
   },
   "mimeTypes": {
