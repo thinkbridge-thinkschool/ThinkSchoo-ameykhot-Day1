@@ -271,29 +271,62 @@ The symptom: login returned 404, only 5 hard-coded quotes appeared, search did n
 
 ## Screenshots
 
-> See `screenshots/` folder in this directory.
+### App — Live URL with 10,001 Quotes
+![Live URL showing 10,001 quotes loaded](screenshots/01-live-url-quotes-list.png)
 
-| File | Shows |
-|---|---|
-| `01-live-url-quotes-list.png` | Live URL with 10,001 quotes loaded |
-| `02-login-page.png` | Login form with seed credentials |
-| `03-logged-in-user.png` | Logged-in state (`user@test.com`) |
-| `04-unauth-redirect-to-login.png` | Auth guard redirect with banner |
-| `05-session-expired.png` | Session expiry message |
-| `06-jwt-bearer-token-in-network.png` | DevTools showing `Authorization: Bearer` header |
-| `07-pagination-10001-quotes.png` | Pagination working across 10,001 quotes |
-| `08-search-by-author.png` | Search filtering by author name |
-| `09-add-quote.png` | New quote added and visible in list |
-| `10-quote-detail-view.png` | Full quote detail with star and copy |
-| `11-empty-state.png` | Empty state when no results |
-| `12-error-state.png` | Error card when API unreachable |
-| `13-lighthouse-score-desktop.png` | Lighthouse scores (desktop, incognito) |
-| `14-keyvault-secrets.png` | Key Vault secret names (values hidden) |
-| `15-container-app-managed-identity.png` | Container App MI = On |
-| `16-container-app-no-secrets-in-settings.png` | No plain-text secrets in app settings |
-| `17-keyvault-access-policies.png` | MI has Key Vault Secrets User role |
-| `18-github-actions-green.png` | Both CI workflows green |
-| `19-no-secrets-in-code.png` | `environment.prod.ts` has only URL |
+### Login Page with Seed Credentials
+![Login form with user@test.com pre-filled](screenshots/02-login-page.png)
+
+### Logged-in State
+![Logged in as user@test.com with Sign Out button](screenshots/03-logged-in-user.png)
+
+### Auth Guard — Redirect to Login When Unauthenticated
+![Auth guard redirects with unauthenticated banner](screenshots/04-unauth-redirect-to-login.png)
+
+### Session Expired After 15 Minutes
+![Session expired banner on login page](screenshots/05-session-expired.png)
+
+### Bearer Token Visible in Network Requests
+![DevTools Network tab showing Authorization: Bearer header on API call](screenshots/06-jwt-bearer-token-in-network.png)
+
+### Pagination Working Across 10,001 Quotes
+![Paginating through 1001 pages of quotes](screenshots/07-pagination-10001-quotes.png)
+
+### Search Filtering by Author Name
+![Search box filtering quotes by author](screenshots/08-search-by-author.png)
+
+### Add Quote — New Quote Saved to Database
+![New quote added and visible in the list](screenshots/09-add-quote.png)
+
+### Quote Detail View
+![Full quote detail with star, copy, and author](screenshots/10-quote-detail-view.png)
+
+### Empty State — No Results Found
+![Empty state component when search returns nothing](screenshots/11-empty-state.png)
+
+### Error State — API Unreachable
+![Error card with retry button when backend is blocked](screenshots/12-error-state.png)
+
+### Lighthouse Score (Desktop, Incognito)
+![Lighthouse scores: Performance, Accessibility 97, Best Practices 100, SEO 100](screenshots/13-lighthouse-score-desktop.png)
+
+### Key Vault — Secrets Stored (Values Hidden)
+![Key Vault showing Jwt--Key and AppInsightsConnectionString secret names](screenshots/14-keyvault-secrets.png)
+
+### Container App — Managed Identity Enabled
+![Container App Identity blade showing System Assigned = On](screenshots/15-container-app-managed-identity.png)
+
+### Container App — No Plain-Text Secrets in Environment Variables
+![Container App environment variables with no passwords or keys](screenshots/16-container-app-no-secrets-in-settings.png)
+
+### Key Vault — Managed Identity Has Secrets User Role
+![Role assignment showing MI has Key Vault Secrets User role](screenshots/17-keyvault-access-policies.png)
+
+### GitHub Actions — Both CI/CD Workflows Green
+![GitHub Actions showing green builds for Angular SWA and Backend](screenshots/18-github-actions-green.png)
+
+### No Secrets in Code — Only API URL
+![environment.prod.ts showing only apiBase URL, no passwords](screenshots/19-no-secrets-in-code.png)
 
 ---
 
