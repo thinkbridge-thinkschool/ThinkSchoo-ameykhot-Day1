@@ -1,5 +1,5 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { Component, PLATFORM_ID, computed, effect, inject, signal } from '@angular/core';
+import { isPlatformBrowser, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../auth.service';
@@ -37,6 +37,9 @@ export class QuotesListComponent {
   isLastPage = computed(() => this.currentPage() >= this.totalPages());
 
   constructor() {
+    // Skip API calls during SSR prerendering — browser hydration handles the load
+    if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
+
     effect(() => {
       const page   = this.currentPage();
       const search = this.searchTerm();

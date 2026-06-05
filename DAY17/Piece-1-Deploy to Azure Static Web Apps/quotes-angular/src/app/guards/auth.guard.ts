@@ -1,8 +1,13 @@
-import { inject } from '@angular/core';
+import { inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../auth.service';
 
 export const authGuard: CanActivateFn = (_route, _state) => {
+  if (!isPlatformBrowser(inject(PLATFORM_ID))) {
+    return true; // SSR prerendering — allow all routes to render
+  }
+
   const router = inject(Router);
   const auth   = inject(AuthService);
   const token  = localStorage.getItem('auth_token');

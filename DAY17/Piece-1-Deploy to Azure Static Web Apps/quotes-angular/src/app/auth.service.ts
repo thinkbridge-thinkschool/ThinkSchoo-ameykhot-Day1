@@ -1,4 +1,5 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../environments/environment';
@@ -11,11 +12,14 @@ interface LoginResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly http      = inject(HttpClient);
-  private readonly TOKEN_KEY = 'auth_token';
-  private readonly base      = environment.apiBase;
+  private readonly http       = inject(HttpClient);
+  private readonly TOKEN_KEY  = 'auth_token';
+  private readonly base       = environment.apiBase;
+  private readonly isBrowser  = isPlatformBrowser(inject(PLATFORM_ID));
 
-  readonly token      = signal<string | null>(localStorage.getItem(this.TOKEN_KEY));
+  readonly token      = signal<string | null>(
+    this.isBrowser ? localStorage.getItem(this.TOKEN_KEY) : null
+  );
   readonly isLoggedIn = computed(() => this.token() !== null);
 
   readonly currentUserEmail = computed<string | null>(() => {
@@ -37,14 +41,14 @@ export class AuthService {
   login(email: string, password: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.base}/api/auth/login`, { email, password }).pipe(
       tap(res => {
-        localStorage.setItem(this.TOKEN_KEY, res.access_token);
+        if (this.isBrowser) localStorage.setItem(this.TOKEN_KEY, res.access_token);
         this.token.set(res.access_token);
       })
     );
   }
 
   logout(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
+    if (this.isBrowser) localStorage.removeItem(this.TOKEN_KEY);
     this.token.set(null);
   }
 }

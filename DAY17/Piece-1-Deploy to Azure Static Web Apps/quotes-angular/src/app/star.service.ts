@@ -1,12 +1,16 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Quote } from './quote.model';
 
 @Injectable({ providedIn: 'root' })
 export class StarService {
-  private readonly KEY = 'quotes-starred';
+  private readonly KEY       = 'quotes-starred';
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   starred = signal<Quote[]>(
-    JSON.parse(localStorage.getItem(this.KEY) ?? '[]') as Quote[]
+    this.isBrowser
+      ? (JSON.parse(localStorage.getItem(this.KEY) ?? '[]') as Quote[])
+      : []
   );
 
   isStarred(id: number): boolean {
@@ -19,6 +23,8 @@ export class StarService {
       ? curr.filter(q => q.id !== quote.id)
       : [...curr, quote];
     this.starred.set(next);
-    localStorage.setItem(this.KEY, JSON.stringify(next));
+    if (this.isBrowser) {
+      localStorage.setItem(this.KEY, JSON.stringify(next));
+    }
   }
 }
