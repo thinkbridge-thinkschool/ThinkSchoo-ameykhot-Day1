@@ -2,7 +2,7 @@ name: Build & Deploy API to Azure Container Apps
 
 on:
   push:
-    branches: [main]
+    branches: [main, Day17/azure-swa-deploy]
     paths:
       - 'DAY-1/Piece-3-Stand up an ASP.NET Core 10 minimal API/QuotesApi/**'
       - '.github/workflows/deploy-backend.yml'

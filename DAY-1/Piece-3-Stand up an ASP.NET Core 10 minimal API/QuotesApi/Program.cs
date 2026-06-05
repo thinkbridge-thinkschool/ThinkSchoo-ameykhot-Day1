@@ -9,7 +9,7 @@ builder.Services.AddHealthChecks();
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
     p.WithOrigins(
         "http://localhost:4200",
-        "https://quotesapp-swa-amey.azurestaticapps.net"
+        "https://lively-field-0238eb80f.7.azurestaticapps.net"
     )
     .AllowAnyHeader()
     .AllowAnyMethod()
