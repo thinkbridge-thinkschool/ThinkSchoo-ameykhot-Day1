@@ -101,6 +101,7 @@ public static class EndpointExtensions
         ILogger<Program> logger,
         int page = 1,
         int size = 10,
+        string search = "",
         CancellationToken cancellationToken = default)
     {
         if (page < 1 || size < 1)
@@ -114,8 +115,8 @@ public static class EndpointExtensions
             });
         }
 
-        var result = await repository.GetQuotesAsync(page, size, cancellationToken);
-        logger.LogInformation("Retrieved {Count} quotes from page {Page}", result.Items.Count, page);
+        var result = await repository.GetQuotesAsync(page, size, search, cancellationToken);
+        logger.LogInformation("Retrieved {Count} quotes from page {Page} search={Search}", result.Items.Count, page, search);
         
         return Results.Ok(new
         {
