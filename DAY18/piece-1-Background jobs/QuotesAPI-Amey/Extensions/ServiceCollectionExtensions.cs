@@ -229,6 +229,8 @@ public static class EndpointExtensions
         // ── Background Jobs test endpoint ─────────────────────────────
         var jobs = app.MapGroup("/api/jobs").WithName("Jobs");
         jobs.MapPost("/enqueue", EnqueueJob).WithName("EnqueueJob");
+        // Sync version — does the slow work BEFORE responding (proves the contrast)
+        jobs.MapPost("/enqueue-sync", EnqueueJobSync).WithName("EnqueueJobSync");
 
         // ── New Collection endpoints ──────────────────────────────────
         var collections = app.MapGroup("/api/collections").WithName("Collections");
@@ -538,28 +540,64 @@ public static class EndpointExtensions
 
     // ── Background Jobs handlers ──────────────────────────────────────
 
+    // BACKGROUND approach: enqueue and return immediately (~1-3ms response time).
+    // The slow work (300ms simulated) happens off the request thread.
     private static async Task<IResult> EnqueueJob(
         EnqueueJobRequest request,
         Channel<QuoteJob> channel,
+        HttpContext httpContext,
         ILogger<Program> logger,
         CancellationToken cancellationToken = default)
     {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         var job = new QuoteJob { QuoteId = request.QuoteId, JobType = request.JobType };
 
-        // WriteAsync returns immediately — no blocking.
-        // The response goes back to the caller in ~0ms while the BackgroundService
-        // picks up the job and does the slow work off the request thread.
         await channel.Writer.WriteAsync(job, cancellationToken);
+        sw.Stop();
 
         logger.LogInformation(
-            "Enqueued job {JobId} — {JobType} for QuoteId={QuoteId}",
-            job.Id, job.JobType, job.QuoteId);
+            "[BACKGROUND] Enqueued {JobType} for QuoteId={QuoteId} — responded in {Ms}ms, slow work runs off-thread",
+            job.JobType, job.QuoteId, sw.ElapsedMilliseconds);
+
+        httpContext.Response.Headers["X-Response-Time-Ms"] = sw.ElapsedMilliseconds.ToString();
+        httpContext.Response.Headers["X-Work-Mode"] = "background";
 
         return Results.Accepted($"/api/jobs/status/{job.Id}", new
         {
             job.Id,
             Status = "queued",
-            job.EnqueuedAt
+            job.EnqueuedAt,
+            ResponseTimeMs = sw.ElapsedMilliseconds,
+            Note = "Slow work (300ms) runs on background thread AFTER this response"
+        });
+    }
+
+    // SYNC approach: does the slow work BEFORE responding (~300ms+ response time).
+    // This is the OLD way — the HTTP request thread is blocked while work runs.
+    private static async Task<IResult> EnqueueJobSync(
+        EnqueueJobRequest request,
+        HttpContext httpContext,
+        ILogger<Program> logger,
+        CancellationToken cancellationToken = default)
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+
+        // Simulate the same 300ms slow work — but now it blocks the response
+        logger.LogInformation("[SYNC] Starting slow work for QuoteId={QuoteId} — caller is WAITING...", request.QuoteId);
+        await Task.Delay(300, cancellationToken);
+        logger.LogInformation("[SYNC] Slow work done — only NOW can we respond to the caller");
+
+        sw.Stop();
+
+        httpContext.Response.Headers["X-Response-Time-Ms"] = sw.ElapsedMilliseconds.ToString();
+        httpContext.Response.Headers["X-Work-Mode"] = "synchronous";
+
+        return Results.Ok(new
+        {
+            QuoteId = request.QuoteId,
+            Status = "done",
+            ResponseTimeMs = sw.ElapsedMilliseconds,
+            Note = "Caller waited the full 300ms before getting this response"
         });
     }
 
