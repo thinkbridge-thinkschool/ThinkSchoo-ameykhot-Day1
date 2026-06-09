@@ -48,6 +48,28 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
 // Add services
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Swagger UI
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "Quotes API — Day 18", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new()
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header
+    });
+    c.AddSecurityRequirement(new()
+    {
+        {
+            new() { Reference = new() { Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, Id = "Bearer" } },
+            Array.Empty<string>()
+        }
+    });
+});
+
 // OpenTelemetry: ASP.NET Core + EF Core + outbound HTTP + console + OTLP export
 // Azure Monitor is wired only when the connection string is present (prod/Azure envs)
 var otelBuilder = builder.Services.AddOpenTelemetry();
@@ -171,6 +193,10 @@ app.Use((ctx, next) =>
     using (LogContext.PushProperty("TraceId", ctx.TraceIdentifier))
         return next();
 });
+
+// Swagger UI — available at http://localhost:5000/swagger
+app.UseSwagger();
+app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Quotes API v1"));
 
 // Middleware
 app.UseExceptionMiddleware();
