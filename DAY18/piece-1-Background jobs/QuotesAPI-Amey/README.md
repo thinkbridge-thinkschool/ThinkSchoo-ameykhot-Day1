@@ -5,6 +5,183 @@ The frontend is an **Angular 21** standalone app with lazy-loaded routing, funct
 
 ---
 
+## Day 18 – Piece 1: Background Jobs (BackgroundService + Channel Queue)
+
+Move slow work off the request thread. Implemented a `BackgroundService` that drains a `Channel<QuoteJob>` queue, contrasted it with `IHostedService` and Hangfire, and handled graceful shutdown via the cancellation token.
+
+### The Problem Being Solved
+
+Without background jobs, slow follow-up work (email, analytics, notifications) blocks the HTTP response:
+
+```
+User → POST /api/quotes → [save to DB] → [send email 300ms] → response   ← user waits 300ms+
+```
+
+With background jobs:
+
+```
+User → POST /api/quotes → [save to DB] → response (instant!)
+                                ↓
+                    Channel<QuoteJob> queue
+                                ↓
+              BackgroundService drains off the request thread
+```
+
+### What was built
+
+| File | What it does |
+|---|---|
+| `BackgroundJobs/QuoteJob.cs` | Job model — `QuoteId`, `JobType`, `Id` (Guid), `EnqueuedAt` |
+| `BackgroundJobs/QuoteProcessingService.cs` | `BackgroundService` implementation — drains `Channel<QuoteJob>` in `ExecuteAsync` |
+| `Extensions/ServiceCollectionExtensions.cs` | `POST /api/jobs/enqueue` (background, ~0ms) + `POST /api/jobs/enqueue-sync` (sync, ~300ms) for timing comparison |
+| `Program.cs` | `Channel.CreateUnbounded<QuoteJob>(SingleReader: true)` registered as singleton + `AddHostedService<QuoteProcessingService>()` |
+
+### BackgroundService Implementation
+
+```csharp
+public class QuoteProcessingService : BackgroundService
+{
+    private readonly ILogger<QuoteProcessingService> _logger;
+    private readonly Channel<QuoteJob> _channel;
+
+    public QuoteProcessingService(
+        ILogger<QuoteProcessingService> logger,
+        Channel<QuoteJob> channel)
+    {
+        _logger = logger;
+        _channel = channel;
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        _logger.LogInformation("[BackgroundService] Started at {Time}", DateTimeOffset.UtcNow);
+
+        try
+        {
+            // ReadAllAsync respects stoppingToken — exits the loop when shutdown is signalled
+            await foreach (var job in _channel.Reader.ReadAllAsync(stoppingToken))
+            {
+                _logger.LogInformation(
+                    "[BackgroundService] Processing {JobType} for QuoteId={QuoteId}",
+                    job.JobType, job.QuoteId);
+
+                await ProcessAsync(job, stoppingToken);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Normal shutdown path — not an error
+            _logger.LogInformation("[BackgroundService] Shutdown requested — stopping cleanly");
+        }
+        finally
+        {
+            _logger.LogInformation("[BackgroundService] Stopped at {Time}", DateTimeOffset.UtcNow);
+        }
+    }
+
+    private async Task ProcessAsync(QuoteJob job, CancellationToken ct)
+    {
+        // Pass ct into every async call so in-flight work stops cooperatively on shutdown
+        await Task.Delay(300, ct);
+        _logger.LogInformation(
+            "[BackgroundService] Completed {JobType} for QuoteId={QuoteId}",
+            job.JobType, job.QuoteId);
+    }
+}
+```
+
+### Channel wiring in Program.cs
+
+```csharp
+// Channel<T> is built into .NET — no NuGet package needed
+builder.Services.AddSingleton(
+    Channel.CreateUnbounded<QuoteJob>(new UnboundedChannelOptions { SingleReader = true })
+);
+builder.Services.AddHostedService<QuoteProcessingService>();
+```
+
+### How graceful shutdown works
+
+When the app receives a shutdown signal (Ctrl+C / Azure SIGTERM / Kubernetes SIGTERM):
+
+1. `stoppingToken` is cancelled
+2. `ReadAllAsync(stoppingToken)` stops waiting for new items and exits the `await foreach` loop
+3. `OperationCanceledException` is caught and logged as a normal informational event — not an error — so monitoring alerts do not fire
+4. The `finally` block always runs and logs the exact stop timestamp
+5. Any job already inside `ProcessAsync` also receives the same token and stops at the next `await`, so no job is killed mid-execution
+
+Azure App Service and Kubernetes both give processes 30 seconds before SIGKILL — passing `stoppingToken` into every `await` means the service finishes within that window with no data corruption.
+
+### IHostedService vs BackgroundService vs Hangfire
+
+| | IHostedService | BackgroundService | Hangfire |
+|---|---|---|---|
+| What it is | Raw interface: `StartAsync` / `StopAsync` | Wraps `IHostedService`, gives you `ExecuteAsync` loop | Third-party library, full job scheduler |
+| Best for | Simple startup / cleanup tasks | Long-running queue drain loops | Scheduled / recurring jobs, retries, dashboard |
+| Recurring jobs | Manual with `Timer` | Manual with loop + delay | Built-in: `RecurringJob.AddOrUpdate` |
+| Retry on failure | You write it | You write it | Built-in |
+| Dashboard UI | No | No | Yes |
+| Survives restart | No (in-memory) | No (in-memory) | Yes — SQL Server / Redis |
+
+**When Hangfire over a hosted service:**
+> Use Hangfire when jobs must survive a process restart, need automatic retry on failure, require a cron schedule, or you need a dashboard to inspect job history — `BackgroundService` is correct for in-process fire-and-forget that can be lost on shutdown.
+
+### Timing proof — background vs sync
+
+Both endpoints do the same 300ms work. The difference is when the caller gets the response:
+
+```
+POST /api/jobs/enqueue       → responseTimeMs: 0    wall-clock: ~12ms  (HTTP 202)
+POST /api/jobs/enqueue-sync  → responseTimeMs: 312  wall-clock: ~333ms (HTTP 200)
+```
+
+The background approach is **~30× faster from the caller's perspective**.
+
+### New endpoints
+
+| Method | URL | What it does |
+|---|---|---|
+| `POST` | `/api/jobs/enqueue` | Enqueues job and returns 202 instantly — slow work runs off-thread |
+| `POST` | `/api/jobs/enqueue-sync` | Does slow work synchronously — caller waits 300ms (comparison baseline) |
+
+Test with Swagger at `http://localhost:5000/swagger`.
+
+### CreateQuote auto-enqueue
+
+`POST /api/quotes` now enqueues a `notify-followers` background job automatically after saving to DB:
+
+```csharp
+var created = await repository.CreateQuoteAsync(quote, cancellationToken);
+// Returns 201 immediately — background job runs after this
+await jobChannel.Writer.WriteAsync(
+    new QuoteJob { QuoteId = created.Id, JobType = "notify-followers" },
+    cancellationToken);
+```
+
+### What would break this
+
+1. **App restart loses all queued jobs** — `Channel<T>` is in-memory. If the process crashes with 50 jobs queued, they are gone. Fix: use Hangfire with SQL Server persistence or write jobs to DB before enqueuing.
+2. **Not passing `stoppingToken` into `ProcessAsync`** — if `ProcessAsync` calls `await Task.Delay(10_000)` without the token, shutdown blocks for 10 seconds and Azure force-kills the process mid-job.
+3. **Unbounded queue under high load** — `CreateUnbounded` accepts infinite jobs. If the producer (HTTP requests) outpaces the consumer (BackgroundService), memory grows without limit. Fix: `Channel.CreateBounded<QuoteJob>(capacity: 1000)`.
+4. **`SingleReader = true` with multiple consumers** — this flag is a performance hint only, but having two services reading the same channel would cause race conditions where each job is processed by only one of them unpredictably.
+
+### What I learned
+
+`Channel<T>` is the cleanest way to hand work between threads in .NET — one thread writes, another reads, and `ReadAllAsync(stoppingToken)` handles both the blocking-wait and the graceful shutdown in a single line. The key mental model: **the HTTP response and the slow work are decoupled by the queue**. The controller enqueues in ~0ms and returns 202. The `BackgroundService` picks the job up independently. The `stoppingToken` is what ties them together on shutdown — without it, clean shutdown is impossible.
+
+### Screenshots
+
+| File | What it shows |
+|---|---|
+| `ScreenShots/01-code-backgroundservice.png` | VS Code showing `ExecuteAsync`, `stoppingToken`, `ReadAllAsync`, `OperationCanceledException` catch |
+| `ScreenShots/02-app-startup-logs.png` | `[BackgroundService] Started at ...` + `Now listening on: http://localhost:5000` |
+| `ScreenShots/03-swagger-enqueue-response.png` | Swagger `POST /api/jobs/enqueue` returning 202 Accepted with `responseTimeMs: 0` |
+| `ScreenShots/08-bonus-timing-comparison.png` | Side-by-side: background (~0ms) vs sync (~312ms) response times |
+
+See [SOLUTION.md](../SOLUTION.md) for the full submission including all code, mentor notes, and what would break this.
+
+---
+
 ## Day 16 – Piece 1: Routing, Lazy Loading, Guards (Angular 21)
 
 Added client-side routing to the existing Angular 21 Quotes UI against the real Week-1 QuotesAPI (`http://localhost:5051`).
