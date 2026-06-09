@@ -1,0 +1,54 @@
+<div class="detail-page">
+
+  <div class="detail-page-nav">
+    <a class="back-btn" routerLink="/quotes" aria-label="Back to quotes list">
+      ← Back to Quotes
+    </a>
+  </div>
+
+  <div class="detail-panel">
+
+    @if (isDetailLoading()) {
+      <div class="state-wrap">
+        <div class="spinner"></div>
+        <p class="state-text">Loading quote…</p>
+      </div>
+    } @else if (detailError()) {
+      <div class="error-card">
+        <span class="error-icon">⚠</span>
+        <p>{{ detailError() }}</p>
+        <button class="retry-btn" (click)="retry()">Retry</button>
+      </div>
+    } @else if (selectedQuote(); as quote) {
+      <article class="quote-full">
+        <span class="big-quote">"</span>
+        <blockquote class="quote-body">{{ quote.text }}</blockquote>
+        <footer class="quote-meta">
+          <div class="author-badge">
+            <div class="author-avatar">{{ quote.author[0] }}</div>
+            <div>
+              <div class="author-name">{{ quote.author }}</div>
+              <div class="quote-date">{{ quote.createdAt | date:'MMMM d, y' }}</div>
+            </div>
+          </div>
+          <div class="quote-id">#{{ quote.id }}</div>
+        </footer>
+
+        <div class="detail-actions">
+          <button
+            class="action-btn"
+            [class.starred]="stars.isStarred(quote.id)"
+            (click)="stars.toggle(quote)"
+          >
+            {{ stars.isStarred(quote.id) ? '★ Starred' : '☆ Star' }}
+          </button>
+          <button class="action-btn" (click)="copy()">
+            {{ copied() ? '✓ Copied!' : '⎘ Copy' }}
+          </button>
+        </div>
+      </article>
+    }
+
+  </div>
+
+</div>
