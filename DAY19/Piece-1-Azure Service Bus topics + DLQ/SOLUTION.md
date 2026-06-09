@@ -272,7 +272,7 @@ public class InMemoryProcessedMessageStore : IProcessedMessageStore
 
 ### Screenshot 1 — App Startup: Both Workers Connected to Azure Service Bus
 
-![App startup — EmailWorker and SearchIndexer both started and listening](../Screenshot/01-app-startup-workers-connected.png)
+![App startup — EmailWorker and SearchIndexer both started and listening](Screenshot/01-app-startup-workers-connected.png)
 
 **What this shows:**
 The application started and both `BackgroundService` workers successfully connected to the Azure Service Bus namespace. The terminal confirms:
@@ -286,7 +286,7 @@ Both workers are now independently polling their own subscription. Any message p
 
 ### Screenshot 2 — Normal Message: Both Subscriptions Received It
 
-![Normal message processed independently by both EmailWorker and SearchIndexer](../Screenshot/02-normal-message-both-subscriptions.png)
+![Normal message processed independently by both EmailWorker and SearchIndexer](Screenshot/02-normal-message-both-subscriptions.png)
 
 **What this shows:**
 After calling `POST /api/servicebus/test-publish` with `QuoteId=1 Author=Marcus Aurelius`, the Service Bus topic fanned the single message out to both subscriptions. The terminal shows:
@@ -301,7 +301,7 @@ Both workers processed the **same event independently** — neither knows about 
 
 ### Screenshot 4 — Poison Message: 3 Retries All Failed → Dead-Lettered
 
-![Poison message delivery #1 #2 #3 all ERR then moved to DLQ](../Screenshot/04-poison-message-3-retries-failed.png)
+![Poison message delivery #1 #2 #3 all ERR then moved to DLQ](Screenshot/04-poison-message-3-retries-failed.png)
 
 **What this shows:**
 After calling `POST /api/servicebus/poison-test` (publishes `QuoteId=999`), the `EmailNotificationsWorker` threw `InvalidOperationException` on every attempt. The terminal shows:
@@ -316,7 +316,7 @@ After `delivery #3`, Service Bus exhausted `max-delivery-count=3` and automatica
 
 ### Screenshot 6 — Azure Portal: Topic with Both Subscriptions Active
 
-![Azure Portal showing quotes-events topic with email-notifications and search-indexer subscriptions](../Screenshot/06-azure-portal-topic-subscriptions.png)
+![Azure Portal showing quotes-events topic with email-notifications and search-indexer subscriptions](Screenshot/06-azure-portal-topic-subscriptions.png)
 
 **What this shows:**
 The Azure Portal confirms all infrastructure was created correctly under `quotesapp-sb-amey`:
@@ -336,7 +336,7 @@ Key observations:
 
 ### Screenshot 7 — Azure Portal: Dead-Letter Subscription Overview (Dead-letter: 2 Messages)
 
-![email-notifications subscription overview showing Dead-letter: 2 MESSAGES](../Screenshot/07-dlq-portal-dead-letter-message.png)
+![email-notifications subscription overview showing Dead-letter: 2 MESSAGES](Screenshot/07-dlq-portal-dead-letter-message.png)
 
 **What this shows:**
 The `email-notifications` subscription overview in Azure Portal confirms:
@@ -352,7 +352,7 @@ The `Dead-letter` count incrementing proves that Service Bus automatically moved
 
 ### Screenshot 7.1 — Azure Service Bus Explorer: Actual Dead-Lettered Messages
 
-![Service Bus Explorer showing 2 dead-lettered poison messages with MessageId, Delivery Count=3, and full body](../Screenshot/07.1-dlq-portal-dead-letter-messages.png)
+![Service Bus Explorer showing 2 dead-lettered poison messages with MessageId, Delivery Count=3, and full body](Screenshot/07.1-dlq-portal-dead-letter-messages.png)
 
 **What this shows:**
 The Service Bus Explorer drills into the Dead-letter queue and shows the actual messages:
