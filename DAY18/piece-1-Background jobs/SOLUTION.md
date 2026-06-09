@@ -164,27 +164,6 @@ The key mental model: **the HTTP response and the slow work are decoupled by the
 
 ---
 
-### Screenshot 4 — Background Processing Logs
-*Shows console logs appearing AFTER the response was sent — `Processing job...` and `Completed...` lines proving work ran off the request thread*
-
-![04 - Background Processing Logs](ScreenShots/04-background-processing-logs.png)
-
----
-
-### Screenshot 5 — Graceful Shutdown
-*Shows Ctrl+C triggering `Shutdown requested — stopping cleanly` and `Stopped at ...` — proves CancellationToken is respected*
-
-![05 - Graceful Shutdown](ScreenShots/05-graceful-shutdown.png)
-
----
-
-### Screenshot 6 — GitHub Push
-*Shows the BackgroundJobs folder in the thinkbridge-thinkschool org with both files committed*
-
-![06 - GitHub Push](ScreenShots/06-github-push.png)
-
----
-
 ### Bonus — Timing Comparison (sync vs background)
 *Side-by-side showing `/api/jobs/enqueue` responds in 0ms vs `/api/jobs/enqueue-sync` blocks for 312ms*
 
