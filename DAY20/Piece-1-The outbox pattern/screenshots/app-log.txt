@@ -1,0 +1,2825 @@
+C:\Users\admin\Desktop\Thinkschool\DAY20\Piece-1-The outbox pattern\QuotesAPI-Amey\Workers\OutboxRelayService.cs(98,13): warning CS0162: Unreachable code detected [C:\Users\admin\Desktop\Thinkschool\DAY20\Piece-1-The outbox pattern\QuotesAPI-Amey\QuotesApi.csproj]
+[11:38:42 INF] [] Program: Applying database schema...
+[11:38:45 WRN] [] Microsoft.EntityFrameworkCore.Model.Validation: The entity type 'CollectionItem' has composite key '{'CollectionId', 'QuoteId'}' which is configured to use generated values. SQLite does not support generated values on composite keys.
+warn: 6/11/2026 11:38:45.956 SqliteEventId.CompositeKeyWithValueGeneration[30002] (Microsoft.EntityFrameworkCore.Model.Validation) 
+      The entity type 'CollectionItem' has composite key '{'CollectionId', 'QuoteId'}' which is configured to use generated values. SQLite does not support generated values on composite keys.
+[11:38:46 WRN] [] Microsoft.EntityFrameworkCore.Model.Validation: Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+warn: 6/11/2026 11:38:46.076 CoreEventId.SensitiveDataLoggingEnabledWarning[10400] (Microsoft.EntityFrameworkCore.Infrastructure) 
+      Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+info: 6/11/2026 11:38:47.351 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (154ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*) FROM "sqlite_master" WHERE "type" = 'table' AND "rootpage" IS NOT NULL;
+info: 6/11/2026 11:38:47.422 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (5ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      
+                          CREATE TABLE IF NOT EXISTS OutboxMessages (
+                              Id   TEXT    NOT NULL CONSTRAINT PK_OutboxMessages PRIMARY KEY,
+                              EventType  TEXT NOT NULL,
+                              Payload    TEXT NOT NULL,
+                              CreatedAt  TEXT NOT NULL,
+                              ProcessedAt TEXT NULL,
+                              RetryCount INTEGER NOT NULL DEFAULT 0,
+                              Error TEXT NULL
+                          )
+info: 6/11/2026 11:38:47.425 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX IF NOT EXISTS IX_OutboxMessages_ProcessedAt ON OutboxMessages(ProcessedAt)
+[11:38:47 INF] [] Program: OutboxMessages table ready
+info: 6/11/2026 11:38:49.445 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Users" AS "u")
+info: 6/11/2026 11:38:49.497 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Authors" AS "a")
+[11:38:49 INF] [] Program: Migrations applied successfully
+[11:38:49 INF] [] QuotesApi.Workers.OutboxRelayService: [Relay] Started — polling every 5s for unsent outbox rows
+[11:38:50 INF] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] Started — listening on quotes-events/search-indexer
+[11:38:50 INF] [] QuotesApi.BackgroundJobs.QuoteProcessingService: [BackgroundService] Started at 06/11/2026 06:08:50 +00:00
+[11:38:50 INF] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] Started — listening on quotes-events/email-notifications
+[11:38:51 INF] [] Microsoft.Hosting.Lifetime: Now listening on: http://localhost:5000
+[11:38:51 INF] [] Microsoft.Hosting.Lifetime: Application started. Press Ctrl+C to shut down.
+[11:38:51 INF] [] Microsoft.Hosting.Lifetime: Hosting environment: Production
+[11:38:51 INF] [] Microsoft.Hosting.Lifetime: Content root path: C:\Users\admin\Desktop\Thinkschool\DAY20\Piece-1-The outbox pattern\QuotesAPI-Amey
+Activity.TraceId:            cc045cc877c4acda61468a880fa42962
+Activity.SpanId:             ca2ec530818cc800
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:08:51.0172228Z
+Activity.Duration:           00:00:00.2114840
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:38:51.324 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (94ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            58008767bad9a11bc899e1d793a08785
+Activity.SpanId:             a56a408882750694
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:08:56.7208917Z
+Activity.Duration:           00:00:00.0016681
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:38:56.724 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            312fadfbd984454e5e36d8d37837095c
+Activity.SpanId:             4c9d7652c0193790
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:01.7478502Z
+Activity.Duration:           00:00:00.0009154
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:01.752 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            47d4d51473045552740168e18ec6a0b4
+Activity.SpanId:             20b521011dc3f1af
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:06.7687813Z
+Activity.Duration:           00:00:00.0006276
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:06.769 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+[11:39:11 INF] [f7bd61944c43e5b1ae9d7d30c9c243a3] Program: Login attempt for user user@test.com
+Activity.TraceId:            f7bd61944c43e5b1ae9d7d30c9c243a3
+Activity.SpanId:             69277e8beb40131a
+Activity.TraceFlags:         Recorded
+Activity.ParentSpanId:       a3810275ed92733b
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:11.6495043Z
+Activity.Duration:           00:00:00.0047868
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "u"."Id", "u"."Email", "u"."PasswordHash"
+FROM "Users" AS "u"
+WHERE "u"."Email" = @request_Email
+LIMIT ?
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:11.655 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (4ms) [Parameters=[@request_Email='user@test.com' (Size = 13)], CommandType='Text', CommandTimeout='30']
+      SELECT "u"."Id", "u"."Email", "u"."PasswordHash"
+      FROM "Users" AS "u"
+      WHERE "u"."Email" = @request_Email
+      LIMIT 1
+Activity.TraceId:            124dc129fd22223a1f0ff3b0657724dc
+Activity.SpanId:             f7e126830608d7ed
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:11.7720443Z
+Activity.Duration:           00:00:00.0016373
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:11.774 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            f7bd61944c43e5b1ae9d7d30c9c243a3
+Activity.SpanId:             57f3ac48a8177c0d
+Activity.TraceFlags:         Recorded
+Activity.ParentSpanId:       8ac44195bd88264b
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:13.6827255Z
+Activity.Duration:           00:00:00.0042690
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: INSERT INTO "RefreshTokens" ("Id", "ExpiresAt", "Family", "ReplacedByToken", "RevokedAt", "Token", "UserId")
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6);
+
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:13.688 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (4ms) [Parameters=[@p0='bfd76f11-aa9c-444c-8d55-f47aae95de34', @p1='2026-06-18T06:09:13.0923287Z' (DbType = DateTime), @p2='b5b6d83aad3c4121b56a9bd7114430c5' (Nullable = false) (Size = 32), @p3=NULL, @p4=NULL (DbType = DateTime), @p5='ZrhtFm9t5032oev1w240+d+Uu1M+MwGv6NjqsJJquO4=' (Nullable = false) (Size = 44), @p6='8184cad7-fb42-40e1-a6e3-19bc3039360f'], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "RefreshTokens" ("Id", "ExpiresAt", "Family", "ReplacedByToken", "RevokedAt", "Token", "UserId")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6);
+Activity.TraceId:            f7bd61944c43e5b1ae9d7d30c9c243a3
+Activity.SpanId:             8ac44195bd88264b
+Activity.TraceFlags:         Recorded
+Activity.ParentSpanId:       a3810275ed92733b
+Activity.DisplayName:        issue-token-pair
+Activity.Kind:               Internal
+Activity.StartTime:          2026-06-11T06:09:13.0295103Z
+Activity.Duration:           00:00:00.6803447
+Activity.Tags:
+    user.id: 8184cad7-fb42-40e1-a6e3-19bc3039360f
+    user.email: user@test.com
+    token.lifetime_seconds: 900
+Instrumentation scope (ActivitySource):
+    Name: QuotesApi.AuthTokenService
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+[11:39:13 INF] [f7bd61944c43e5b1ae9d7d30c9c243a3] Program: Login succeeded for user 8184cad7-fb42-40e1-a6e3-19bc3039360f (user@test.com)
+Activity.TraceId:            f7bd61944c43e5b1ae9d7d30c9c243a3
+Activity.SpanId:             a3810275ed92733b
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        POST /api/auth/login
+Activity.Kind:               Server
+Activity.StartTime:          2026-06-11T06:09:11.1436296Z
+Activity.Duration:           00:00:02.6045360
+Activity.Tags:
+    server.address: localhost
+    server.port: 5000
+    http.request.method: POST
+    url.scheme: http
+    url.path: /api/auth/login
+    network.protocol.version: 1.1
+    user_agent.original: curl/8.19.0
+    http.route: /api/auth/login
+    http.response.status_code: 200
+Instrumentation scope (ActivitySource):
+    Name: Microsoft.AspNetCore
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+Activity.TraceId:            255c7e51c24f1bb81f9bfe38955b23ed
+Activity.SpanId:             bf1eae36404ee3f6
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:16.7807586Z
+Activity.Duration:           00:00:00.0005802
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:16.781 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+[11:39:20 INF] [446ade93aa979a2525370b2c9b03aa46] Program: Login attempt for user user@test.com
+Activity.TraceId:            446ade93aa979a2525370b2c9b03aa46
+Activity.SpanId:             1710b3d6cc6310e1
+Activity.TraceFlags:         Recorded
+Activity.ParentSpanId:       b1cdcac65e9058ab
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:20.8754906Z
+Activity.Duration:           00:00:00.0004481
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "u"."Id", "u"."Email", "u"."PasswordHash"
+FROM "Users" AS "u"
+WHERE "u"."Email" = @request_Email
+LIMIT ?
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:20.876 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@request_Email='user@test.com' (Size = 13)], CommandType='Text', CommandTimeout='30']
+      SELECT "u"."Id", "u"."Email", "u"."PasswordHash"
+      FROM "Users" AS "u"
+      WHERE "u"."Email" = @request_Email
+      LIMIT 1
+Activity.TraceId:            446ade93aa979a2525370b2c9b03aa46
+Activity.SpanId:             0a2cf73d6a859ef1
+Activity.TraceFlags:         Recorded
+Activity.ParentSpanId:       5c7924df3ba30fce
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:21.4535717Z
+Activity.Duration:           00:00:00.0024140
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: INSERT INTO "RefreshTokens" ("Id", "ExpiresAt", "Family", "ReplacedByToken", "RevokedAt", "Token", "UserId")
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6);
+
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:21.456 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (2ms) [Parameters=[@p0='52686b45-c0aa-4742-b5da-5eb62cb96586', @p1='2026-06-18T06:09:21.4491939Z' (DbType = DateTime), @p2='663dd7edfffe46baaeb26f954cb7324d' (Nullable = false) (Size = 32), @p3=NULL, @p4=NULL (DbType = DateTime), @p5='rEV2wL0rV/XTjcDXYd/PFRhe3bvF1N3NQrbme/Rga0E=' (Nullable = false) (Size = 44), @p6='8184cad7-fb42-40e1-a6e3-19bc3039360f'], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "RefreshTokens" ("Id", "ExpiresAt", "Family", "ReplacedByToken", "RevokedAt", "Token", "UserId")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6);
+Activity.TraceId:            446ade93aa979a2525370b2c9b03aa46
+Activity.SpanId:             5c7924df3ba30fce
+Activity.TraceFlags:         Recorded
+Activity.ParentSpanId:       b1cdcac65e9058ab
+Activity.DisplayName:        issue-token-pair
+Activity.Kind:               Internal
+Activity.StartTime:          2026-06-11T06:09:21.4479903Z
+Activity.Duration:           00:00:00.0103010
+Activity.Tags:
+    user.id: 8184cad7-fb42-40e1-a6e3-19bc3039360f
+    user.email: user@test.com
+    token.lifetime_seconds: 900
+Instrumentation scope (ActivitySource):
+    Name: QuotesApi.AuthTokenService
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+[11:39:21 INF] [446ade93aa979a2525370b2c9b03aa46] Program: Login succeeded for user 8184cad7-fb42-40e1-a6e3-19bc3039360f (user@test.com)
+Activity.TraceId:            446ade93aa979a2525370b2c9b03aa46
+Activity.SpanId:             b1cdcac65e9058ab
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        POST /api/auth/login
+Activity.Kind:               Server
+Activity.StartTime:          2026-06-11T06:09:20.8572343Z
+Activity.Duration:           00:00:00.6034142
+Activity.Tags:
+    server.address: localhost
+    server.port: 5000
+    http.request.method: POST
+    url.scheme: http
+    url.path: /api/auth/login
+    network.protocol.version: 1.1
+    user_agent.original: curl/8.19.0
+    http.route: /api/auth/login
+    http.response.status_code: 200
+Instrumentation scope (ActivitySource):
+    Name: Microsoft.AspNetCore
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+Activity.TraceId:            ed4cc1950ebb9a1f83b5bf2799094e50
+Activity.SpanId:             6315c3445a29d96b
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:21.7979009Z
+Activity.Duration:           00:00:00.0006832
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:21.799 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            07fc1f60975faf3871ab7f9e0820d0cb
+Activity.SpanId:             af7f519bc8ca3bd3
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:26.8299844Z
+Activity.Duration:           00:00:00.0008239
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:26.831 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            7d403adcf06e84a99ee5ac442127610e
+Activity.SpanId:             c1b25277a819a4d8
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:31.8574745Z
+Activity.Duration:           00:00:00.0009107
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:31.859 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+[11:39:34 INF] [d98e3fe3c39e47293ed690d9d1b17897] Program: Received CreateQuote request for author Seneca
+[11:39:34 INF] [d98e3fe3c39e47293ed690d9d1b17897] Program: Validation passed for author Seneca — building quote entity
+[11:39:34 INF] [d98e3fe3c39e47293ed690d9d1b17897] Program: Assigned OwnerId 8184cad7-fb42-40e1-a6e3-19bc3039360f to new quote
+[11:39:34 INF] [d98e3fe3c39e47293ed690d9d1b17897] QuotesApi.Data.QuoteRepository: Creating quote by Seneca
+Activity.TraceId:            d98e3fe3c39e47293ed690d9d1b17897
+Activity.SpanId:             35d2dd446f40d4eb
+Activity.TraceFlags:         Recorded
+Activity.ParentSpanId:       d33ed102898ff70d
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:35.0039766Z
+Activity.Duration:           00:00:00.0012560
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: INSERT INTO "Quotes" ("Author", "AuthorId", "CreatedAt", "OwnerId", "Text")
+VALUES (@p0, @p1, @p2, @p3, @p4)
+RETURNING "Id";
+
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:35.005 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p0='Seneca' (Nullable = false) (Size = 6), @p1=NULL (DbType = Int32), @p2='2026-06-11T06:09:34.8340303Z' (DbType = DateTime), @p3='8184cad7-fb42-40e1-a6e3-19bc3039360f' (Nullable = true), @p4='We suffer more in imagination than in reality.' (Nullable = false) (Size = 46)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Quotes" ("Author", "AuthorId", "CreatedAt", "OwnerId", "Text")
+      VALUES (@p0, @p1, @p2, @p3, @p4)
+      RETURNING "Id";
+[11:39:35 INF] [d98e3fe3c39e47293ed690d9d1b17897] Program: Quote 10069 saved (within tx)
+Activity.TraceId:            d98e3fe3c39e47293ed690d9d1b17897
+Activity.SpanId:             6096942acc8ef28e
+Activity.TraceFlags:         Recorded
+Activity.ParentSpanId:       d33ed102898ff70d
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:35.1457967Z
+Activity.Duration:           00:00:00.0010931
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: INSERT INTO "OutboxMessages" ("Id", "CreatedAt", "Error", "EventType", "Payload", "ProcessedAt")
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5)
+RETURNING "RetryCount";
+
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:35.147 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p0='5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca', @p1='2026-06-11T06:09:35.0527230Z' (DbType = DateTime), @p2=NULL, @p3='QuoteCreated' (Nullable = false) (Size = 12), @p4='{"QuoteId":10069,"Author":"Seneca","Text":"We suffer more in imagination than in reality.","CreatedAt":"2026-06-11T06:09:35.0535715Z"}' (Nullable = false) (Size = 134), @p5=NULL (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "OutboxMessages" ("Id", "CreatedAt", "Error", "EventType", "Payload", "ProcessedAt")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5)
+      RETURNING "RetryCount";
+[11:39:35 INF] [d98e3fe3c39e47293ed690d9d1b17897] Program: [Outbox] Quote 10069 + outbox row committed atomically in one transaction
+[11:39:35 INF] [d98e3fe3c39e47293ed690d9d1b17897] Program: Enqueued notify-followers job for QuoteId=10069
+[11:39:35 INF] [] QuotesApi.BackgroundJobs.QuoteProcessingService: [BackgroundService] Processing job b1e3982e-df88-4bb5-ba65-5648fd79998d — notify-followers for QuoteId=10069
+Activity.TraceId:            d98e3fe3c39e47293ed690d9d1b17897
+Activity.SpanId:             d33ed102898ff70d
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        POST /api/quotes/
+Activity.Kind:               Server
+Activity.StartTime:          2026-06-11T06:09:34.6129535Z
+Activity.Duration:           00:00:00.6309620
+Activity.Tags:
+    server.address: localhost
+    server.port: 5000
+    http.request.method: POST
+    url.scheme: http
+    url.path: /api/quotes
+    network.protocol.version: 1.1
+    user_agent.original: curl/8.19.0
+    http.route: /api/quotes/
+    http.response.status_code: 201
+Instrumentation scope (ActivitySource):
+    Name: Microsoft.AspNetCore
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+[11:39:35 INF] [] QuotesApi.BackgroundJobs.QuoteProcessingService: [BackgroundService] Completed notify-followers for QuoteId=10069 (JobId=b1e3982e-df88-4bb5-ba65-5648fd79998d)
+Activity.TraceId:            7179cf3e788ba38330899232630cb9ae
+Activity.SpanId:             065fe9ff715a3e18
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:36.8866423Z
+Activity.Duration:           00:00:00.0007934
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:36.888 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+[11:39:36 INF] [] QuotesApi.Workers.OutboxRelayService: [Relay] Found 1 unsent outbox row(s) — publishing now
+Activity.TraceId:            41d0fc8be045290be687cede7a449dfc
+Activity.SpanId:             a7d4a3d6397afd10
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:38.0196742Z
+Activity.Duration:           00:00:00.0006871
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: UPDATE "OutboxMessages" SET "Error" = @p0, "RetryCount" = @p1
+WHERE "Id" = @p2
+RETURNING ?;
+
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:38.021 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p2='5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca', @p0='SIMULATED CRASH — after send, before mark-sent' (Size = 46), @p1='1'], CommandType='Text', CommandTimeout='30']
+      UPDATE "OutboxMessages" SET "Error" = @p0, "RetryCount" = @p1
+      WHERE "Id" = @p2
+      RETURNING 1;
+[11:39:38 WRN] [] QuotesApi.Workers.OutboxRelayService: [Relay] Publish failed — Id=5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca RetryCount=1 Error=SIMULATED CRASH — after send, before mark-sent
+[11:39:38 INF] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] Processing QuoteId=10069 Author=Seneca MessageId=5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca Delivery=1
+[11:39:38 INF] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] Indexing QuoteId=10069 Author=Seneca MessageId=5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca Delivery=1
+[11:39:38 INF] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] Email sent for QuoteId=10069 by Seneca
+[11:39:38 INF] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] Indexed QuoteId=10069 — search index updated
+[11:39:38 INF] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] Completed MessageId=5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca
+[11:39:38 INF] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] Completed MessageId=5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca
+Activity.TraceId:            52fb7aa0bb0bfa4828f767aa3934867a
+Activity.SpanId:             b52f94cfd367811f
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:43.0532798Z
+Activity.Duration:           00:00:00.0008007
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:43.054 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+[11:39:43 INF] [] QuotesApi.Workers.OutboxRelayService: [Relay] Found 1 unsent outbox row(s) — publishing now
+Activity.TraceId:            4375bfee0f8c13031f1ab07b064b8356
+Activity.SpanId:             f9dfbc39e9d74240
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:43.3248198Z
+Activity.Duration:           00:00:00.0004842
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: UPDATE "OutboxMessages" SET "RetryCount" = @p0
+WHERE "Id" = @p1
+RETURNING ?;
+
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:43.327 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p1='5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca', @p0='2'], CommandType='Text', CommandTimeout='30']
+      UPDATE "OutboxMessages" SET "RetryCount" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;
+[11:39:43 WRN] [] QuotesApi.Workers.OutboxRelayService: [Relay] Publish failed — Id=5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca RetryCount=2 Error=SIMULATED CRASH — after send, before mark-sent
+[11:39:43 WRN] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] DUPLICATE detected — MessageId=5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca already processed, skipping (delivery #1)
+[11:39:43 WRN] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] DUPLICATE detected — MessageId=5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca already indexed, skipping
+Activity.TraceId:            4dfb04f40b58dad3df1228d87b9955dd
+Activity.SpanId:             40b34a421d54ed73
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:48.3347829Z
+Activity.Duration:           00:00:00.0006700
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:48.336 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+[11:39:48 INF] [] QuotesApi.Workers.OutboxRelayService: [Relay] Found 1 unsent outbox row(s) — publishing now
+Activity.TraceId:            3367c24caf4dd829f8200ed2547c2b0d
+Activity.SpanId:             2134a0655d73a940
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:48.5783322Z
+Activity.Duration:           00:00:00.0004796
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: UPDATE "OutboxMessages" SET "RetryCount" = @p0
+WHERE "Id" = @p1
+RETURNING ?;
+
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:48.579 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p1='5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca', @p0='3'], CommandType='Text', CommandTimeout='30']
+      UPDATE "OutboxMessages" SET "RetryCount" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;
+[11:39:48 WRN] [] QuotesApi.Workers.OutboxRelayService: [Relay] Publish failed — Id=5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca RetryCount=3 Error=SIMULATED CRASH — after send, before mark-sent
+[11:39:48 WRN] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] DUPLICATE detected — MessageId=5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca already processed, skipping (delivery #1)
+[11:39:48 WRN] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] DUPLICATE detected — MessageId=5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca already indexed, skipping
+Activity.TraceId:            f841d30e48528bbd67454167fe0492bf
+Activity.SpanId:             1246c3022144c3cb
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:53.6059244Z
+Activity.Duration:           00:00:00.0006855
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:53.607 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+[11:39:53 INF] [] QuotesApi.Workers.OutboxRelayService: [Relay] Found 1 unsent outbox row(s) — publishing now
+Activity.TraceId:            3e98409455c007957e8de696b17dc991
+Activity.SpanId:             328ee32eb87156b7
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:53.8450888Z
+Activity.Duration:           00:00:00.0004761
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: UPDATE "OutboxMessages" SET "RetryCount" = @p0
+WHERE "Id" = @p1
+RETURNING ?;
+
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:53.846 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p1='5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca', @p0='4'], CommandType='Text', CommandTimeout='30']
+      UPDATE "OutboxMessages" SET "RetryCount" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;
+[11:39:53 WRN] [] QuotesApi.Workers.OutboxRelayService: [Relay] Publish failed — Id=5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca RetryCount=4 Error=SIMULATED CRASH — after send, before mark-sent
+[11:39:53 WRN] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] DUPLICATE detected — MessageId=5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca already processed, skipping (delivery #1)
+[11:39:53 WRN] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] DUPLICATE detected — MessageId=5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca already indexed, skipping
+Activity.TraceId:            ac8dddcafdc21f3bbd9694f144e0f6be
+Activity.SpanId:             b77f3bd25dce5f67
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:58.8594886Z
+Activity.Duration:           00:00:00.0005974
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:58.860 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+[11:39:58 INF] [] QuotesApi.Workers.OutboxRelayService: [Relay] Found 1 unsent outbox row(s) — publishing now
+Activity.TraceId:            97292bba68153f200438e1c96633653a
+Activity.SpanId:             d3036262f388011a
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:09:59.0998479Z
+Activity.Duration:           00:00:00.0006044
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: UPDATE "OutboxMessages" SET "RetryCount" = @p0
+WHERE "Id" = @p1
+RETURNING ?;
+
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:39:59.101 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p1='5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca', @p0='5'], CommandType='Text', CommandTimeout='30']
+      UPDATE "OutboxMessages" SET "RetryCount" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;
+[11:39:59 WRN] [] QuotesApi.Workers.OutboxRelayService: [Relay] Publish failed — Id=5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca RetryCount=5 Error=SIMULATED CRASH — after send, before mark-sent
+[11:39:59 WRN] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] DUPLICATE detected — MessageId=5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca already indexed, skipping
+[11:39:59 WRN] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] DUPLICATE detected — MessageId=5fe5fdd4-9331-4ae5-a1a7-dbc9b990e5ca already processed, skipping (delivery #1)
+Activity.TraceId:            1e66e1cfdbecf43776266bb546e5b99c
+Activity.SpanId:             006370144526e69a
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:10:04.1151261Z
+Activity.Duration:           00:00:00.0005885
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:40:04.116 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            719f63b25367849d2c1fac71b3bdf0d9
+Activity.SpanId:             008c2b3b6f75e451
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:10:09.1317875Z
+Activity.Duration:           00:00:00.0005749
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:40:09.133 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            52d8615a4f83f511305f116ccbde8353
+Activity.SpanId:             e1edfb88568c520c
+Activity.TraceFlags:         Recorded
+Activity.ParentSpanId:       deb24fec4eca5304
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:10:12.6456338Z
+Activity.Duration:           00:00:00.0007185
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."EventType", "o"."CreatedAt", "o"."ProcessedAt", "o"."RetryCount", "o"."Error", CASE
+    WHEN "o"."ProcessedAt" IS NOT NULL THEN ?
+    WHEN "o"."RetryCount" >= ? THEN ?
+    ELSE ?
+END AS "Status"
+FROM "OutboxMessages" AS "o"
+ORDER BY "o"."CreatedAt" DESC
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:40:12.647 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='50'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."EventType", "o"."CreatedAt", "o"."ProcessedAt", "o"."RetryCount", "o"."Error", CASE
+          WHEN "o"."ProcessedAt" IS NOT NULL THEN 'sent'
+          WHEN "o"."RetryCount" >= 5 THEN 'dead-lettered'
+          ELSE 'pending'
+      END AS "Status"
+      FROM "OutboxMessages" AS "o"
+      ORDER BY "o"."CreatedAt" DESC
+      LIMIT @p
+Activity.TraceId:            52d8615a4f83f511305f116ccbde8353
+Activity.SpanId:             deb24fec4eca5304
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        GET /api/outbox/
+Activity.Kind:               Server
+Activity.StartTime:          2026-06-11T06:10:12.5195870Z
+Activity.Duration:           00:00:00.1907660
+Activity.Tags:
+    server.address: localhost
+    server.port: 5000
+    http.request.method: GET
+    url.scheme: http
+    url.path: /api/outbox
+    network.protocol.version: 1.1
+    user_agent.original: curl/8.19.0
+    http.route: /api/outbox/
+    http.response.status_code: 200
+Instrumentation scope (ActivitySource):
+    Name: Microsoft.AspNetCore
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+Activity.TraceId:            5aa3c70a94a2fc3d502c4304313f2b9d
+Activity.SpanId:             a52ecb4c17d003ae
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:10:14.1593731Z
+Activity.Duration:           00:00:00.0007132
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:40:14.161 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            3931b231a383b73cebeff3fc25c1591d
+Activity.SpanId:             e365f3b82cded3e1
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:10:19.1722933Z
+Activity.Duration:           00:00:00.0006223
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:40:19.173 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            8561f4e4721cfce28f87de407aee50de
+Activity.SpanId:             321e2493dd02f7dd
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:10:24.1995042Z
+Activity.Duration:           00:00:00.0006961
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:40:24.201 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            59f1117849ae05cc30e3701c6d1ae05c
+Activity.SpanId:             ac468043a4309eab
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:10:29.2110667Z
+Activity.Duration:           00:00:00.0005679
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:40:29.212 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            806a54502d27fe3d83b0c782c4acd125
+Activity.SpanId:             ccb61b1caa16ee2f
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:10:34.2216957Z
+Activity.Duration:           00:00:00.0005752
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:40:34.222 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            3c178db330deb44708c6cfddac436938
+Activity.SpanId:             e5a94654b3b8d466
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:10:39.2358338Z
+Activity.Duration:           00:00:00.0006681
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:40:39.237 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            5f14dee0fcb607b9631e34160fa7c863
+Activity.SpanId:             ffad480d9f3f152b
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:10:44.2899772Z
+Activity.Duration:           00:00:00.0007292
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:40:44.291 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            4110e86466496484c07f30d09f731800
+Activity.SpanId:             061ba4998b43cfe8
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:10:49.3274262Z
+Activity.Duration:           00:00:00.0005413
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:40:49.328 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            fd8ea03ad2d3453aeb010fea0f3d5443
+Activity.SpanId:             7fce285f060247ef
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:10:54.3435749Z
+Activity.Duration:           00:00:00.0027962
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:40:54.347 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (3ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            bb7c5336e2da5d737dcc417c94281b82
+Activity.SpanId:             faf07674941c57f3
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:10:59.3785968Z
+Activity.Duration:           00:00:00.0005780
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:40:59.379 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            a4b016afbfaedc5aca450889f1bd5053
+Activity.SpanId:             883d925c92b10fa8
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:11:04.4459110Z
+Activity.Duration:           00:00:00.0005625
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:41:04.447 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            9cd33eacbc552c1b811f7770cc3a91cb
+Activity.SpanId:             abcdfa9789d97fe7
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:11:09.5063359Z
+Activity.Duration:           00:00:00.0006714
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:41:09.507 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            ca2e7d00db27572987dbb16619cefb26
+Activity.SpanId:             09f62ddd52e9c72b
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:11:14.5419022Z
+Activity.Duration:           00:00:00.0005750
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:41:14.543 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            dc5897e31e4d030f1ae44175a0f775fa
+Activity.SpanId:             cdf6af7129cddbf3
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:11:19.5746046Z
+Activity.Duration:           00:00:00.0005170
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:41:19.575 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            88db511322546c2207f8c1b962f26da8
+Activity.SpanId:             26c20198e3c1ef49
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:11:24.5996947Z
+Activity.Duration:           00:00:00.0018334
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:41:24.602 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (2ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            80fd165a5330912de7efcf05e9b5de81
+Activity.SpanId:             5141de96c0ceb8d8
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:11:29.6305734Z
+Activity.Duration:           00:00:00.0004841
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:41:29.632 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            627aaadf01166e22cab128b4deb3a28f
+Activity.SpanId:             f9c2b943f3b088ae
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:11:34.7240723Z
+Activity.Duration:           00:00:00.0008382
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:41:34.725 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            07e72217639c4202b5077df2904f8b22
+Activity.SpanId:             99db8001a64df47b
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:11:39.7555467Z
+Activity.Duration:           00:00:00.0005578
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:41:39.756 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            d146cf0132ea0cad09e312f20208ca69
+Activity.SpanId:             4f5912258e58cc4f
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:11:44.7637265Z
+Activity.Duration:           00:00:00.0006992
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:41:44.765 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            bc62fd9bb23499211e5f7b0483033bf7
+Activity.SpanId:             f0501fead5229050
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:11:49.7666090Z
+Activity.Duration:           00:00:00.0005699
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:41:49.767 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            7a3a9639a5a48691ab8ef7ec7375d017
+Activity.SpanId:             8ae2f04943ee5fa3
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:11:54.7721585Z
+Activity.Duration:           00:00:00.0005755
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:41:54.773 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            49044f12dba78dbe13ce04ea8a9c4d04
+Activity.SpanId:             e669dfa4ca2297fa
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:11:59.7745464Z
+Activity.Duration:           00:00:00.0005394
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:41:59.775 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            7ecd8a6e764a3fe597604a212551ffa2
+Activity.SpanId:             a0488d7215232626
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:12:04.7805529Z
+Activity.Duration:           00:00:00.0005706
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:42:04.781 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            228aa41e4f1cc0b5db559c9b1d89310e
+Activity.SpanId:             6ba894f1397390b2
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:12:09.7923976Z
+Activity.Duration:           00:00:00.0006121
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:42:09.793 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            4a64fffb0a77affb1c3e992be372ed40
+Activity.SpanId:             1fd4f1b27cdb706d
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:12:14.8012282Z
+Activity.Duration:           00:00:00.0007458
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:42:14.802 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            4155d41775cac6677f335153e52cd710
+Activity.SpanId:             7962607943c570fc
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:12:19.8201576Z
+Activity.Duration:           00:00:00.0006153
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:42:19.821 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            3adb2a5698b83d2d1dfae8c5300ab57d
+Activity.SpanId:             c7af4ca9a10a3058
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:12:24.8233238Z
+Activity.Duration:           00:00:00.0005908
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:42:24.824 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            75370be26fe06557e25a170eaa2beeb2
+Activity.SpanId:             a42a8053c0d8986f
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:12:29.8271763Z
+Activity.Duration:           00:00:00.0007077
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:42:29.828 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            51ff1de94ba59a3719922343a5e8e7c8
+Activity.SpanId:             72daf8bcec499a2e
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:12:34.8567189Z
+Activity.Duration:           00:00:00.0004736
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:42:34.857 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            e2badcd2a28319cfb3c40eb660e82386
+Activity.SpanId:             f4a0232488a8de88
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:12:39.8535505Z
+Activity.Duration:           00:00:00.0008699
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:42:39.854 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            a6fbdd02075345b82abe1d56f04970a0
+Activity.SpanId:             99c8d96f9d29ef19
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:12:44.8539517Z
+Activity.Duration:           00:00:00.0004182
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:42:44.854 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            0a123498a45fef5095b2fb14f346fb78
+Activity.SpanId:             523604666bb55306
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:12:49.8700175Z
+Activity.Duration:           00:00:00.0006953
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:42:49.871 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            9fe193781422dc48ba3b5f6766f93c00
+Activity.SpanId:             55652291f63f596c
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:12:54.8770188Z
+Activity.Duration:           00:00:00.0008393
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:42:54.878 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            3ba9f2012f42a2486ad36b37e406118e
+Activity.SpanId:             6fd26276fd5d58b0
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:12:59.8815038Z
+Activity.Duration:           00:00:00.0005931
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:42:59.882 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            5b115b3a3897aea296716ca4429ec497
+Activity.SpanId:             cbaa433c2c70847f
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:13:04.8993534Z
+Activity.Duration:           00:00:00.0005815
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:43:04.900 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            9a4ecd9d56de2e1f7d98dc9760b922b6
+Activity.SpanId:             315a0125b971cbf2
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:13:09.9539124Z
+Activity.Duration:           00:00:00.0006612
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:43:09.955 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            cf4bb0954af13d71bfb166216132a964
+Activity.SpanId:             4a7651cbba61cc5a
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:13:14.9574379Z
+Activity.Duration:           00:00:00.0004165
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:43:14.958 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            4d5a00a71607e31ca483e8b6a63a7a3f
+Activity.SpanId:             894b9c61d5731780
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:13:19.9753318Z
+Activity.Duration:           00:00:00.0004639
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:43:19.976 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            e9cc0a2e1e92f29fd081ebdcdf0eac69
+Activity.SpanId:             022032e1b5bb5959
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:13:24.9802440Z
+Activity.Duration:           00:00:00.0003413
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:43:24.980 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            da90e7ab5894606e80f4b102c2839259
+Activity.SpanId:             e5ab43d5599aa8e0
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:13:29.9833042Z
+Activity.Duration:           00:00:00.0005120
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:43:29.984 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            35fa71f971d410dc213677ffe73a5f92
+Activity.SpanId:             eb7cb61eddc735e8
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:13:34.9893908Z
+Activity.Duration:           00:00:00.0005717
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:43:34.990 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            857cd1fddd4496c1be7cb273305293e4
+Activity.SpanId:             ce12d8237019581f
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:13:40.0182208Z
+Activity.Duration:           00:00:00.0006065
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:43:40.019 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            0b1dd9e9757124b25edca972963c3e8d
+Activity.SpanId:             2dab0d0a6d2cde5f
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:13:45.0265519Z
+Activity.Duration:           00:00:00.0004667
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:43:45.027 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            e47a47e09dbbbd46fc7538a21aa84f4e
+Activity.SpanId:             c64691b04a96dd5d
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:13:50.0404139Z
+Activity.Duration:           00:00:00.0005900
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:43:50.041 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            0c16e81a5b1b2ee4bc6a5e4adc4736f0
+Activity.SpanId:             decdb64f6edd8e2e
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:13:55.0509161Z
+Activity.Duration:           00:00:00.0005289
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:43:55.051 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            6e9994915dba50a580560b2fb2c39a77
+Activity.SpanId:             e0deb819ce4dddf7
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:14:00.0660347Z
+Activity.Duration:           00:00:00.0005114
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:44:00.067 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            289d774d658b56f9ed4a90eb698c3f8a
+Activity.SpanId:             658c57a04f85a69f
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:14:05.0722003Z
+Activity.Duration:           00:00:00.0004130
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:44:05.072 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            9e557e69131c84d6be0704951b795e78
+Activity.SpanId:             4d2ea21d28d4e66e
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:14:10.0946589Z
+Activity.Duration:           00:00:00.0004652
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:44:10.095 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
+Activity.TraceId:            4d7088202e86bce83592a15bfd0082c2
+Activity.SpanId:             0e079613723560af
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        main
+Activity.Kind:               Client
+Activity.StartTime:          2026-06-11T06:14:15.1486466Z
+Activity.Duration:           00:00:00.0005038
+Activity.Tags:
+    db.system: sqlite
+    peer.service: Users
+    db.name: main
+    db.statement: SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+FROM "OutboxMessages" AS "o"
+WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < ?
+ORDER BY "o"."CreatedAt"
+LIMIT @p
+Instrumentation scope (ActivitySource):
+    Name: OpenTelemetry.Instrumentation.EntityFrameworkCore
+    Version: 1.15.1-beta.1
+    Schema URL: https://opentelemetry.io/schemas/1.24.0
+Resource associated with Activity:
+    service.name: QuotesApi
+    service.instance.id: 6c3de551-9471-437e-9474-9a941141ea19
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+
+info: 6/11/2026 11:44:15.149 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='10'], CommandType='Text', CommandTimeout='30']
+      SELECT "o"."Id", "o"."CreatedAt", "o"."Error", "o"."EventType", "o"."Payload", "o"."ProcessedAt", "o"."RetryCount"
+      FROM "OutboxMessages" AS "o"
+      WHERE "o"."ProcessedAt" IS NULL AND "o"."RetryCount" < 5
+      ORDER BY "o"."CreatedAt"
+      LIMIT @p
