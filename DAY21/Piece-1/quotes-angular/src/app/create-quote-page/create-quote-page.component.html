@@ -1,0 +1,20 @@
+<div class="cqp-page">
+
+  <div class="cqp-nav">
+    <a class="back-btn" routerLink="/quotes">← Back to Quotes</a>
+  </div>
+
+  <header class="cqp-header">
+    <div class="hero-badge">✦ Philosophy Collection</div>
+    <h1 class="cqp-title">
+      <span class="gradient-text">Add</span>
+      <span class="cqp-title-word"> Quote</span>
+    </h1>
+    <p class="cqp-desc">Share wisdom with the collection</p>
+  </header>
+
+  <div class="cqp-form">
+    <app-create-quote (closed)="onQuoteCreated()" />
+  </div>
+
+</div>
