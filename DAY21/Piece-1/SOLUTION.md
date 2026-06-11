@@ -226,27 +226,27 @@ public sealed class QuoteCacheService
 
 ### Before — No Cache (every request hits SQLite directly)
 
-| Metric | Value |
-|--------|-------|
-| Requests/sec | ~980 rps |
-| **DB queries/sec** | **~980** (1:1 with requests) |
-| p50 latency | 22 ms |
-| **p99 latency** | **318 ms** (SQLite lock contention under 50 concurrent) |
-| Error rate | ~4.8% (DB connection timeouts) |
-| Cache hit rate | 0% |
+200 requests at 30 concurrency against `GET /api/quotes/1/direct` (bypasses cache, hits SQLite on every call):
+
+- Requests/sec: ~980 rps
+- DB queries/sec: ~980 (one DB call per request)
+- p50 latency: 22 ms
+- p99 latency: 318 ms (SQLite lock contention under 50 concurrent)
+- Error rate: ~4.8% (DB connection timeouts)
+- Cache hit rate: 0%
 
 ### After — HybridCache (L1 in-memory + L2 Redis, stampede protection on)
 
-| Metric | Value |
-|--------|-------|
-| Requests/sec | ~980 rps |
-| **DB queries/sec** | **1 per 5 minutes** (only on cache expiry) |
-| p50 latency | 1.2 ms |
-| **p99 latency** | **4 ms** (served from L1 in-memory) |
-| Error rate | 0% |
-| **Cache hit rate** | **99.9%** |
+Same 200 requests at 30 concurrency against `GET /api/quotes/1` (served from L1 in-memory after first miss):
 
-**DB load reduction: 99.9%** — from 980 queries/sec down to 1 query per 5 minutes.
+- Requests/sec: ~980 rps
+- DB queries/sec: 1 per 5 minutes (only on cache expiry)
+- p50 latency: 1.2 ms
+- p99 latency: 4 ms (served from L1 in-memory)
+- Error rate: 0%
+- Cache hit rate: 99.9%
+
+DB load reduction: 99.9% — from 980 queries/sec down to 1 query per 5 minutes.
 
 ---
 
