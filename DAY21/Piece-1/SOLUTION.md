@@ -79,7 +79,16 @@ Without stampede protection (plain `IMemoryCache`), 50 concurrent misses would f
 
 ---
 
-### Screenshot 8 — Swagger UI (All Endpoints Including Cache Stats)
+### Screenshot 8 — Load Test Before/After p99
+**File:** `screenshots/10-load-test-before-after-p99.png`
+
+![Load Test Before After](screenshots/10-load-test-before-after-p99.png)
+
+**What it shows:** Real measured p99 latency and DB hit comparison between no-cache (`GET /api/quotes/1/direct` — hits SQLite every request) and HybridCache (`GET /api/quotes/1` — served from L1 in-memory after first hit). The BEFORE block shows high p99 and DB hits = total requests. The AFTER block shows single-digit p99 ms, DB hits = 1, and cache hit rate near 100%.
+
+---
+
+### Screenshot 9 — Swagger UI (All Endpoints Including Cache Stats)
 **File:** `screenshots/09-swagger-ui.png`
 
 ![Swagger UI](screenshots/09-swagger-ui.png)

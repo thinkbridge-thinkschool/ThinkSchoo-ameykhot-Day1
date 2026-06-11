@@ -275,6 +275,7 @@ public static class EndpointExtensions
         quotes.MapGet("/", GetQuotes).WithName("GetQuotes");
         quotes.MapPost("/", CreateQuote).WithName("CreateQuote").RequireAuthorization("can-edit-quotes");
         quotes.MapGet("/{id}", GetQuoteById).WithName("GetQuoteById");
+        quotes.MapGet("/{id}/direct", GetQuoteByIdDirect).WithName("GetQuoteByIdDirect"); // bypasses cache — used for BEFORE load test
         quotes.MapDelete("/{id}", DeleteQuote).WithName("DeleteQuote").RequireAuthorization("can-edit-quotes");
 
         // ── CQRS-lite endpoints (Day 12) ─────────────────────────────
@@ -554,6 +555,18 @@ public static class EndpointExtensions
         var quote = await cacheService.GetByIdAsync(id, cancellationToken);
         return quote is null
             ? Results.NotFound(new ProblemDetails { Title = "Not Found", Status = 404, Detail = $"Quote with ID {id} not found" })
+            : Results.Ok(quote);
+    }
+
+    // Direct DB hit — no cache layer. Used for the BEFORE load-test baseline.
+    private static async Task<IResult> GetQuoteByIdDirect(
+        int id,
+        IQuoteRepository repository,
+        CancellationToken cancellationToken = default)
+    {
+        var quote = await repository.GetQuoteByIdAsync(id, cancellationToken);
+        return quote is null
+            ? Results.NotFound(new ProblemDetails { Title = "Not Found", Status = 404, Detail = $"Quote {id} not found" })
             : Results.Ok(quote);
     }
 
