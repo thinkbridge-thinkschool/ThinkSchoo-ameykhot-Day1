@@ -270,23 +270,3 @@ Invoke-RestMethod http://localhost:5000/api/cache/stats
 ```
 
 Only **1 DB round-trip** for 50 concurrent requests. That is stampede protection working.
-
----
-
-## What I Learned
-
-**HybridCache is a multiplier, not just a faster cache.** The L1/L2 split means a single app instance avoids even a Redis network hop for frequently accessed keys (sub-millisecond from RAM), while multiple app instances still share a consistent L2 Redis view. The biggest insight was stampede protection: with plain `IMemoryCache` or `IDistributedCache`, a cache expiry under load fires N simultaneous DB queries. HybridCache collapses that to exactly one DB call — no extra locking code needed, it is built into `GetOrCreateAsync`.
-
-The DTO pattern was also key: HybridCache serialises values to JSON for the distributed layer, so domain models with private setters need either `[JsonConstructor]` or a plain DTO as the cache value type. Using `private sealed record QuoteDto(...)` kept the domain model untouched while making the cached value fully serialisable.
-
----
-
-## What Would Break This
-
-| Scenario | Why it breaks | Fix |
-|----------|---------------|-----|
-| Multiple app instances with **only L1** (no Redis) | Each instance caches independently → stale data diverges between pods | Always wire L2 Redis for multi-instance / Kubernetes deployments |
-| **Cache invalidation miss** after quote update/delete | Stale data served for up to 5 min TTL | Call `QuoteCacheService.InvalidateAsync(id)` inside the `DeleteQuote` and update handlers |
-| Redis goes down mid-production | HybridCache L2 write fails; L1 still works but distributed consistency is lost | Set `abortConnect=false` in Redis connection string so the app degrades gracefully to L1-only |
-| **Very high unique-key traffic** (1000 different quote IDs/sec) | L1 memory fills fast, evictions negate the benefit | Only cache the truly hot keys (top-N by access frequency); use a shorter `LocalCacheExpiration` |
-| **Large paginated list cached** | A full page of 100 quotes costs ~50 KB per app instance; 1000 page variants = 50 MB | Cache only single-entity hot reads (`quote:{id}`); paginated reads should skip L1 or use a much shorter TTL |
