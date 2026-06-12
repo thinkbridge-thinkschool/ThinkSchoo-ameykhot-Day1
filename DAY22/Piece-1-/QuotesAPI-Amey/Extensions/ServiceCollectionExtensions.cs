@@ -38,14 +38,10 @@ public static class ServiceCollectionExtensions
         var provider = configuration.GetValue<string>("DatabaseProvider") ?? "Sqlite";
         if (provider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase))
             services.AddDbContext<QuoteDbContext>(options => options
-                .UseSqlServer(connectionString)
-                .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
-                .EnableSensitiveDataLogging());
+                .UseSqlServer(connectionString));
         else
             services.AddDbContext<QuoteDbContext>(options => options
-                .UseSqlite(connectionString)
-                .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
-                .EnableSensitiveDataLogging());
+                .UseSqlite(connectionString));
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddScoped<IQuoteFactory, QuoteFactory>();

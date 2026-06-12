@@ -4,6 +4,7 @@ using QuotesApi.Configuration;
 using QuotesApi.Data;
 using QuotesApi.Extensions;
 using QuotesApi.Middleware;
+using Polly;
 using QuotesApi.Resilience;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -116,8 +117,7 @@ otelBuilder
         .AddOtlpExporter(o =>
         {
             o.Endpoint = new Uri(builder.Configuration["OpenTelemetry:OtlpEndpoint"] ?? "http://localhost:4317");
-        })
-        .AddConsoleExporter());
+        }));
 
 var jwtOpts = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
     ?? throw new InvalidOperationException("Jwt section not found in configuration");
@@ -216,20 +216,22 @@ builder.Services.AddSingleton(
 builder.Services.AddHostedService<QuoteProcessingService>();
 
 // ── Polly Resilience Pipeline ──────────────────────────────────────────────
-// ExternalQuoteClient wraps outbound calls to /api/quotes/unstable/{id} with
-// four policies: bulkhead (max 10 concurrent) → circuit breaker (opens after 5
-// failures, recovers after 30 s) → retry (3× with exponential backoff) →
-// timeout (5 s per attempt).
+// IMPORTANT: the policy must be a singleton so ALL requests share the same
+// circuit breaker instance. If the factory creates a new policy per-request,
+// each request has its own private breaker that never reaches the failure
+// threshold and the circuit never opens.
+builder.Services.AddSingleton<IAsyncPolicy<HttpResponseMessage>>(sp =>
+    PollyPolicies.GetResiliencePipeline(
+        sp.GetRequiredService<ILogger<ExternalQuoteClient>>()));
+
 builder.Services.AddHttpClient<IExternalQuoteClient, ExternalQuoteClient>(client =>
 {
     client.BaseAddress = new Uri(
         builder.Configuration["ExternalApi:BaseUrl"] ?? "http://localhost:5000");
-    // HttpClient timeout must exceed Polly's per-attempt timeout so Polly fires first
     client.Timeout = TimeSpan.FromSeconds(60);
 })
 .AddPolicyHandler((services, _) =>
-    PollyPolicies.GetResiliencePipeline(
-        services.GetRequiredService<ILogger<ExternalQuoteClient>>()));
+    services.GetRequiredService<IAsyncPolicy<HttpResponseMessage>>());
 
 var app = builder.Build();
 

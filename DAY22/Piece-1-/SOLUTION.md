@@ -236,24 +236,36 @@ Fire 35+ concurrent requests to see the bulkhead reject the overflow:
 
 ---
 
-## Screenshots to Take
+## Screenshots
 
-Take the following screenshots and save them in the `screenshots/` folder next to this file.
+### Screenshot 1 — NuGet packages installed
+![01-polly-packages](screenshots/01-polly-packages.png)
 
-| # | Filename | What to capture | Proves |
-|---|---|---|---|
-| 1 | `01-polly-packages.png` | Terminal: `dotnet list package` output showing Polly NuGet refs | Installed correctly |
-| 2 | `02-pipeline-code.png` | VS Code: `Resilience/PollyPolicies.cs` full file visible | All 4 policies written |
-| 3 | `03-retry-backoff-logs.png` | Terminal: `[Polly RETRY] Attempt 1/2/3` with 2s/4s/8s delays | Retry + backoff works |
-| 4 | `04-circuit-opens.png` | Terminal: `[Polly CIRCUIT OPEN]` log line | Circuit breaker triggered |
-| 5 | `05-open-rejecting.png` | Terminal: instant 503s (no `[Client] Calling...` log lines) | No HTTP calls while open |
-| 6 | `06-half-open.png` | Terminal: `[Polly CIRCUIT HALF-OPEN]` log line | Probe request after 30 s |
-| 7 | `07-circuit-closed.png` | Terminal: `[Polly CIRCUIT CLOSED]` + successful response | Full recovery proved |
-| 8 | `08-timeout-log.png` | Terminal: `[Polly TIMEOUT] Request timed out after 5s` | Timeout policy fires |
-| 9 | `09-bulkhead-log.png` | Terminal: `[Polly BULKHEAD] Too many concurrent requests` | Bulkhead policy fires |
-| 10 | `10-github-repo.png` | GitHub repo page showing the `DAY22/Piece-1-` folder | Submitted correctly |
+### Screenshot 2 — All 4 policies in PollyPolicies.cs
+![02-pipeline-code](screenshots/02-pipeline-code.png)
 
-Screenshots 4, 6, and 7 are the most important for the mentor — they show the three circuit breaker states.
+### Screenshot 3 — Retry with 2 s / 4 s / 8 s backoff
+![03-retry-backoff-logs](screenshots/03-retry-backoff-logs.png)
+
+### Screenshot 4 — Circuit OPENS ⭐ most important
+![04-circuit-opens](screenshots/04-circuit-opens.png)
+
+### Screenshot 5 — Instant rejections while circuit is open
+![05-open-rejecting](screenshots/05-open-rejecting.png)
+
+### Screenshot 6 — Circuit HALF-OPEN after 30 s ⭐ most important
+![06-half-open](screenshots/06-half-open.png)
+
+### Screenshot 7 — Circuit CLOSED — full recovery ⭐ most important
+![07-circuit-closed](screenshots/07-circuit-closed.png)
+
+### Screenshot 8 — Timeout fires after 5 s
+![08-timeout-log](screenshots/08-timeout-log.png)
+
+### Screenshot 9 — GitHub repo
+![10-github-repo](screenshots/10-github-repo.png)
+
+> Screenshot 10 will be added after pushing to GitHub.
 
 ---
 
