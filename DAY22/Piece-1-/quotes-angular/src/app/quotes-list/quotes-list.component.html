@@ -1,0 +1,160 @@
+<div class="page">
+
+  <!-- Header -->
+  <header class="hero">
+    <div class="hero-badge">✦ Philosophy Collection</div>
+    <h1 class="hero-title">
+      <span class="gradient-text">Quotes</span>
+      <span class="hero-subtitle-word"> Explorer</span>
+    </h1>
+    <p class="hero-desc">Wisdom from the greatest minds across centuries</p>
+
+    <div class="hero-actions">
+      <button class="add-quote-btn" (click)="goToCreate()">
+        <span class="btn-icon" aria-hidden="true">+</span> Add Quote
+      </button>
+
+      <div class="user-info">
+        @if (auth.currentUserEmail(); as email) {
+          <div class="user-avatar" [title]="email">
+            {{ email[0].toUpperCase() }}
+          </div>
+          <span class="user-email">{{ email }}</span>
+        }
+        <button class="logout-btn" (click)="logout()">Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Two-panel layout -->
+  <div class="panels">
+
+    <!-- Left panel: quotes list -->
+    <div class="panel-left">
+      <div class="list-panel">
+
+        <div class="panel-header">
+          <span class="panel-title">QUOTES</span>
+          <span class="count-badge">{{ totalQuotes() | number }}</span>
+          <button class="shuffle-btn" (click)="shuffle()" title="Random page">⟳</button>
+        </div>
+
+        <div class="tabs">
+          <button class="tab-btn" [class.active]="activeTab() === 'all'" (click)="setTab('all')">
+            All
+          </button>
+          <button class="tab-btn" [class.active]="activeTab() === 'starred'" (click)="setTab('starred')">
+            ★ Starred
+            @if (stars.starred().length > 0) {
+              <span class="tab-badge">{{ stars.starred().length }}</span>
+            }
+          </button>
+        </div>
+
+        @if (activeTab() === 'all') {
+
+          <div class="search-wrap">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              class="search-input"
+              type="text"
+              placeholder="Search by author…"
+              [ngModel]="searchTerm()"
+              (ngModelChange)="searchTerm.set($event)"
+            />
+            @if (searchTerm()) {
+              <button class="clear-btn" (click)="searchTerm.set('')">✕</button>
+            }
+          </div>
+
+          @if (isListLoading()) {
+            <div class="state-wrap">
+              <div class="spinner"></div>
+              <p class="state-text">Loading quotes…</p>
+            </div>
+          }
+
+          @if (listError()) {
+            <div class="error-card">
+              <span class="error-icon">⚠</span>
+              <p>{{ listError() }}</p>
+              <button class="retry-btn" (click)="retry()">Retry</button>
+            </div>
+          }
+
+          @if (!isListLoading() && !listError() && quotes().length === 0) {
+            <div class="empty-state">
+              <div class="empty-icon">🔍</div>
+              <p class="empty-text">No quotes yet.</p>
+            </div>
+          }
+
+          @if (!isListLoading() && !listError() && quotes().length > 0) {
+            <ul class="quotes-list">
+              @for (quote of quotes(); track quote.id) {
+                <li class="quote-item" (click)="selectQuote(quote.id)">
+                  <div class="item-top-row">
+                    <div class="item-author">{{ quote.author }}</div>
+                    @if (stars.isStarred(quote.id)) {
+                      <span class="star-dot">★</span>
+                    }
+                  </div>
+                  <div class="item-preview">"{{ quote.text.slice(0, 50) }}…"</div>
+                </li>
+              }
+            </ul>
+          }
+
+          @if (!isListLoading() && totalQuotes() > 0) {
+            <nav class="pagination">
+              <button class="page-btn" (click)="prevPage()" [disabled]="currentPage() === 1">← Prev</button>
+              <span class="page-indicator">Page {{ currentPage() }}</span>
+              <button class="page-btn" (click)="nextPage()" [disabled]="isLastPage()">Next →</button>
+            </nav>
+          }
+
+        }
+
+        @if (activeTab() === 'starred') {
+
+          @if (stars.starred().length === 0) {
+            <div class="empty-state">
+              <div class="empty-icon">☆</div>
+              <p class="empty-text">No starred quotes yet.<br>Click a quote to view and star it.</p>
+            </div>
+          } @else {
+            <ul class="quotes-list">
+              @for (quote of stars.starred(); track quote.id) {
+                <li class="quote-item" (click)="selectQuote(quote.id)">
+                  <div class="item-top-row">
+                    <div class="item-author">{{ quote.author }}</div>
+                    <span class="star-dot">★</span>
+                  </div>
+                  <div class="item-preview">"{{ quote.text.slice(0, 50) }}…"</div>
+                </li>
+              }
+            </ul>
+          }
+
+        }
+
+      </div>
+    </div>
+
+    <!-- Right panel: Add Quote card -->
+    <div class="panel-right">
+      <div class="add-quote-card">
+        <div class="aq-icon" aria-hidden="true">✦</div>
+        <h2 class="aq-title">Share Your Wisdom</h2>
+        <p class="aq-desc">Add a quote to the collection and inspire others.</p>
+        <button class="aq-btn" (click)="goToCreate()">
+          + Add a Quote
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</div>

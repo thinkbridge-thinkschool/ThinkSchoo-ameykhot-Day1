@@ -1,0 +1,38 @@
+﻿[15:10:44 INF] [] QuotesApi.BackgroundJobs.QuoteProcessingService: [BackgroundService] Started at 06/09/2026 09:40:44 +00:00
+[15:10:44 INF] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] Started â€” listening on quotes-events/email-notifications
+[15:10:44 INF] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] Started â€” listening on quotes-events/search-indexer
+[15:10:45 INF] [] Microsoft.Hosting.Lifetime: Application started. Press Ctrl+C to shut down.
+[15:12:35 INF] [968bf5ff556ca61cb1237a11bcb0b5ea] QuotesApi.Services.QuoteEventPublisher: [Publisher] Sent QuoteCreated â€” QuoteId=1 Author=Marcus Aurelius MessageId=da53f9b4-e1c9-4dbb-b063-613f06c71391
+[15:12:35 INF] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] Processing QuoteId=1 Author=Marcus Aurelius MessageId=da53f9b4-e1c9-4dbb-b063-613f06c71391 Delivery=1
+[15:12:35 INF] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] Indexing QuoteId=1 Author=Marcus Aurelius MessageId=da53f9b4-e1c9-4dbb-b063-613f06c71391 Delivery=1
+[15:12:36 INF] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] Email sent for QuoteId=1 by Marcus Aurelius
+[15:12:36 INF] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] Indexed QuoteId=1 â€” search index updated
+[15:12:37 INF] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] Completed MessageId=da53f9b4-e1c9-4dbb-b063-613f06c71391
+[15:12:38 INF] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] Completed MessageId=da53f9b4-e1c9-4dbb-b063-613f06c71391
+[15:12:53 INF] [b971403e3b3829433c96d070482c067b] QuotesApi.Services.QuoteEventPublisher: [Publisher] Sent QuoteCreated â€” QuoteId=2 Author=Seneca MessageId=my-fixed-id-001
+[15:12:53 INF] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] Processing QuoteId=2 Author=Seneca MessageId=my-fixed-id-001 Delivery=1
+[15:12:53 INF] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] Indexing QuoteId=2 Author=Seneca MessageId=my-fixed-id-001 Delivery=1
+[15:12:53 INF] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] Email sent for QuoteId=2 by Seneca
+[15:12:53 INF] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] Indexed QuoteId=2 â€” search index updated
+[15:12:54 INF] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] Completed MessageId=my-fixed-id-001
+[15:12:54 INF] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] Completed MessageId=my-fixed-id-001
+[15:12:58 INF] [c71359a3b18790dfa5c601912bb682dc] QuotesApi.Services.QuoteEventPublisher: [Publisher] Sent QuoteCreated â€” QuoteId=2 Author=Seneca MessageId=my-fixed-id-001
+[15:12:58 WRN] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] DUPLICATE detected â€” MessageId=my-fixed-id-001 already processed, skipping (delivery #1)
+[15:12:58 WRN] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] DUPLICATE detected â€” MessageId=my-fixed-id-001 already indexed, skipping
+[15:13:17 WRN] [562aaf64e870297f97212d442a06a1d5] Program: [Demo] Publishing POISON message QuoteId=999 MessageId=poison-test-73363de3ee84458a9c444669bd39299b
+[15:13:18 INF] [562aaf64e870297f97212d442a06a1d5] QuotesApi.Services.QuoteEventPublisher: [Publisher] Sent QuoteCreated â€” QuoteId=999 Author=Poison Author MessageId=poison-test-73363de3ee84458a9c444669bd39299b
+Activity.DisplayName:        POST /api/servicebus/poison-test
+    url.path: /api/servicebus/poison-test
+    http.route: /api/servicebus/poison-test
+[15:13:18 INF] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] Processing QuoteId=999 Author=Poison Author MessageId=poison-test-73363de3ee84458a9c444669bd39299b Delivery=1
+[15:13:18 INF] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] Indexing QuoteId=999 Author=Poison Author MessageId=poison-test-73363de3ee84458a9c444669bd39299b Delivery=1
+[15:13:18 ERR] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] Failed MessageId=poison-test-73363de3ee84458a9c444669bd39299b delivery #1 â€” abandoning for retry/DLQ
+System.InvalidOperationException: [EmailWorker] Poison message â€” QuoteId 999 is permanently invalid (delivery #1)
+[15:13:19 INF] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] Indexed QuoteId=999 â€” search index updated
+[15:13:19 INF] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] Processing QuoteId=999 Author=Poison Author MessageId=poison-test-73363de3ee84458a9c444669bd39299b Delivery=2
+[15:13:19 ERR] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] Failed MessageId=poison-test-73363de3ee84458a9c444669bd39299b delivery #2 â€” abandoning for retry/DLQ
+System.InvalidOperationException: [EmailWorker] Poison message â€” QuoteId 999 is permanently invalid (delivery #2)
+[15:13:19 INF] [] QuotesApi.BackgroundJobs.SearchIndexerWorker: [SearchIndexer] Completed MessageId=poison-test-73363de3ee84458a9c444669bd39299b
+[15:13:19 INF] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] Processing QuoteId=999 Author=Poison Author MessageId=poison-test-73363de3ee84458a9c444669bd39299b Delivery=3
+[15:13:19 ERR] [] QuotesApi.BackgroundJobs.EmailNotificationsWorker: [EmailWorker] Failed MessageId=poison-test-73363de3ee84458a9c444669bd39299b delivery #3 â€” abandoning for retry/DLQ
+System.InvalidOperationException: [EmailWorker] Poison message â€” QuoteId 999 is permanently invalid (delivery #3)
